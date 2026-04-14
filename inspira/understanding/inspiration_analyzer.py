@@ -20,6 +20,7 @@ No external API keys required. Runs entirely on-device.
 import json
 import base64
 import re
+import requests
 from pathlib import Path
 from typing import List, Tuple, Optional
 
@@ -53,7 +54,7 @@ class InspirationAnalyzer:
         print(result.furniture_count) # 4
     """
 
-    def __init__(self, qwen_model: str = "qwen3-vl:2b"):
+    def __init__(self, qwen_model: str = "llava:7b"):
         self.qwen_model       = qwen_model
         self._clip_model      = None
         self._clip_preprocess = None
@@ -165,26 +166,33 @@ class InspirationAnalyzer:
         pil_image: Image.Image,
     ) -> List[FurnitureItem]:
         """
-        Detect furniture using CLIP zero-shot classification
-        on a sliding grid of overlapping image patches.
+        Detect furniture using CLIP zero-shot classification.
 
-        Why a grid?
-            CLIP classifies whole images, not regions.
-            By splitting into patches we can localise
-            which part of the image contains each object.
-            3x3 grid with 20% overlap = 9 patches, good
-            coverage without being too slow.
+        Strategy (two-pass):
+            Pass 1 — Whole image classification
+                     Ask CLIP: what is the DOMINANT furniture in this room?
+                     High confidence threshold (0.28) — only strong matches.
+                     This gives us the main piece (sofa, bed, dining table).
+
+            Pass 2 — Grid detection for secondary items
+                     3x3 overlapping grid, lower threshold (0.22).
+                     Skip any label already found in Pass 1.
+                     Deduplicate: keep only highest confidence per label.
+
+        Why two passes?
+            A full sofa image scores much higher for "sofa" than
+            a partial patch does. Pass 1 anchors us to the right
+            primary furniture. Pass 2 finds secondary items without
+            contaminating the primary detection.
         """
         self._load_clip()
-
         import clip
 
         h, w = np_image.shape[:2]
 
-        # Encode all furniture category text labels once
-        # We only do this once per call — not per patch
+        # Encode all furniture text labels once
         text_tokens = clip.tokenize(
-            [f"a {cat} in an interior room"
+            [f"a photo of a {cat} in an interior room"
              for cat in FURNITURE_CATEGORIES]
         ).to(DEVICE)
 
@@ -194,15 +202,41 @@ class InspirationAnalyzer:
                 dim=-1, keepdim=True
             )
 
-        # Grid parameters
+        seen_labels = {}
+
+        # ── Pass 1: Whole image ─────────────────────────────────────────
+        full_input = self._clip_preprocess(pil_image).unsqueeze(0).to(DEVICE)
+        with torch.no_grad():
+            full_features = self._clip_model.encode_image(full_input)
+            full_features = full_features / full_features.norm(
+                dim=-1, keepdim=True
+            )
+
+        full_sims = (full_features @ text_features.T).squeeze(0).cpu().numpy()
+
+        # Top 2 from whole image with high confidence
+        top_indices = full_sims.argsort()[::-1][:2]
+        for idx in top_indices:
+            conf  = float(full_sims[idx])
+            label = FURNITURE_CATEGORIES[idx]
+            if conf > 0.25:
+                colour = self._dominant_colour(np_image)
+                seen_labels[label] = FurnitureItem(
+                    label      = label,
+                    confidence = conf,
+                    bbox_2d    = np.array([0, 0, w, h], dtype=np.float32),
+                    mask       = None,
+                    colour     = colour,
+                )
+                break  # Only take the top whole-image detection
+
+        # ── Pass 2: Grid for secondary items ────────────────────────────
         grid_rows, grid_cols = 3, 3
-        overlap  = 0.20
+        overlap  = 0.15
         step_h   = int(h / (grid_rows - overlap))
         step_w   = int(w / (grid_cols - overlap))
         patch_h  = int(h / grid_rows * (1 + overlap))
         patch_w  = int(w / grid_cols * (1 + overlap))
-
-        seen_labels = {}
 
         for row in range(grid_rows):
             for col in range(grid_cols):
@@ -220,31 +254,38 @@ class InspirationAnalyzer:
                         dim=-1, keepdim=True
                     )
 
-                similarities = (
+                sims = (
                     image_features @ text_features.T
                 ).squeeze(0).cpu().numpy()
 
-                best_idx   = int(np.argmax(similarities))
-                best_conf  = float(similarities[best_idx])
-                best_label = FURNITURE_CATEGORIES[best_idx]
+                # Get top 3 from this patch
+                patch_top = sims.argsort()[::-1][:3]
+                for idx in patch_top:
+                    conf  = float(sims[idx])
+                    label = FURNITURE_CATEGORIES[idx]
 
-                if best_conf > 0.20:
-                    bbox   = np.array([x1, y1, x2, y2], dtype=np.float32)
-                    colour = self._dominant_colour(np_image[y1:y2, x1:x2])
+                    # Skip if already found with higher confidence
+                    if label in seen_labels:
+                        continue
 
-                    if (best_label not in seen_labels or
-                            best_conf > seen_labels[best_label].confidence):
-                        seen_labels[best_label] = FurnitureItem(
-                            label      = best_label,
-                            confidence = best_conf,
+                    # Higher threshold for grid patches to reduce noise
+                    if conf > 0.26:
+                        bbox   = np.array([x1, y1, x2, y2], dtype=np.float32)
+                        colour = self._dominant_colour(np_image[y1:y2, x1:x2])
+                        seen_labels[label] = FurnitureItem(
+                            label      = label,
+                            confidence = conf,
                             bbox_2d    = bbox,
                             mask       = None,
                             colour     = colour,
                         )
+                    break  # Only best match per patch
 
         items = list(seen_labels.values())
         items.sort(key=lambda x: x.confidence, reverse=True)
-        return items
+
+        # Cap at 5 items — more than that on a single image is noise
+        return items[:5]
 
     def _dominant_colour(
         self,
@@ -265,97 +306,98 @@ class InspirationAnalyzer:
         furniture_items: List[FurnitureItem],
     ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
         """
-        Use Qwen3-VL:2b via Ollama to extract style, room type,
-        and layout description from the image.
+        Use Qwen3-VL:2b via Ollama REST API to extract style,
+        room type, and layout description.
 
-        Key implementation details:
-            Qwen3 is a THINKING model — it wraps its reasoning
-            in <think>...</think> tags before the final answer.
-            We must strip these tags before parsing JSON.
+        Why REST API instead of ollama Python client:
+            The REST API supports chat_template_kwargs which lets
+            us set enable_thinking=False — disabling Qwen3's
+            chain-of-thought reasoning that was causing empty responses.
+            The Python client (v0.5.1) does not expose this parameter.
 
-            We also use /no_think flag in the prompt to suppress
-            the thinking step entirely and get faster responses.
+        Why single-turn direct JSON:
+            Qwen3-VL:2b is too small for reliable long-form generation.
+            Single-word and short JSON responses work consistently.
+            We pass CLIP-detected furniture as context so the model
+            only needs to classify style and room type — not describe.
 
         Returns:
             (style, room_type, layout_description)
-            All None if Ollama is not running.
+            Falls back to rule-based analysis if REST call fails.
         """
         self._load_ollama()
-        if self._ollama_client is None:
-            return None, None, None
+        if not getattr(self, "_ollama_ready", False):
+            return self._fallback_understand(furniture_items)
 
-        # Build context from what we already know
         furniture_list = ", ".join(
             [item.label for item in furniture_items[:6]]
-        ) or "unknown"
+        ) or "unknown furniture"
 
-        # /no_think suppresses Qwen3's chain-of-thought reasoning.
-        # This makes responses 3-5x faster and returns clean text.
-        prompt = f"""/no_think
-Look at this interior design image carefully.
-
-Detected furniture: {furniture_list}
-
-Reply with ONLY this JSON and nothing else:
-{{"style": "STYLE", "room_type": "ROOM", "layout_description": "DESCRIPTION"}}
-
-For STYLE use exactly one of: {', '.join(STYLE_CATEGORIES)}
-For ROOM use: living room, bedroom, dining room, home office, or kitchen
-For DESCRIPTION write 1-2 sentences about the room's layout and feel.
-
-JSON only. No other text."""
+        styles_str = ", ".join(STYLE_CATEGORIES)
+        prompt = (
+            f"This interior room contains: {furniture_list}.\n"
+            f"Look at the image carefully.\n"
+            f"Reply with ONLY this JSON and nothing else:\n"
+            f"{{\n"
+            f"  \"style\": \"one of: {styles_str}\",\n"
+            f"  \"room_type\": \"one of: living room, bedroom, dining room, home office, kitchen\",\n"
+            f"  \"layout_description\": \"one sentence describing the room atmosphere and layout\"\n"
+            f"}}\n"
+            f"Replace the placeholder text with real values. JSON only."
+        )
 
         try:
             with open(image_path, "rb") as f:
                 b64_image = base64.b64encode(f.read()).decode("utf-8")
 
-            log.info("Querying Qwen3-VL:2b for scene understanding...")
+            log.info("LLaVA: querying via REST API...")
 
-            response = self._ollama_client.chat(
-                model=self.qwen_model,
-                messages=[{
-                    "role": "user",
-                    "content": prompt,
-                    "images": [b64_image],
-                }],
-                options={
-                    "temperature": 0.1,
-                    "num_predict": 200,
-                }
+            resp = requests.post(
+                "http://localhost:11434/api/chat",
+                json={
+                    "model": self.qwen_model,
+                    "stream": False,
+                    "options": {"temperature": 0.1, "num_predict": 120},
+                    "messages": [{
+                        "role": "user",
+                        "content": prompt,
+                        "images": [b64_image],
+                    }],
+                },
+                timeout=60
             )
+            resp.raise_for_status()
+            raw = resp.json()["message"]["content"].strip()
+            log.info(f"Raw response: {repr(raw[:150])}")
 
-            raw = response["message"]["content"]
-            log.info(f"Raw response: {raw[:150]}")
-
-            # Clean the response
             cleaned = self._clean_response(raw)
-            log.info(f"Cleaned response: {cleaned}")
+            log.info(f"Cleaned: {repr(cleaned)}")
 
             if not cleaned:
-                log.warning("Empty response after cleaning")
+                log.warning("Empty response — using fallback")
                 return self._fallback_understand(furniture_items)
 
-            data = json.loads(cleaned)
+            data  = json.loads(cleaned)
+            style = data.get("style", "").lower().strip() or None
+            room  = data.get("room_type", "").lower().strip() or None
+            desc  = data.get("layout_description", "").strip() or None
 
-            style    = data.get("style", "").lower().strip() or None
-            room     = data.get("room_type", "").lower().strip() or None
-            desc     = data.get("layout_description", "").strip() or None
-
-            # Validate style against our categories
+            # Validate style is one of our categories
             if style and style not in STYLE_CATEGORIES:
                 style = next(
                     (s for s in STYLE_CATEGORIES if s in style),
-                    STYLE_CATEGORIES[0]
+                    None
                 )
 
             return style, room, desc
 
         except json.JSONDecodeError as e:
-            log.warning(f"JSON parse failed: {e} | attempting fallback")
+            log.warning(f"JSON parse failed: {e} — using fallback")
             return self._fallback_understand(furniture_items)
         except Exception as e:
-            log.warning(f"Qwen3-VL query failed: {e}")
-            return None, None, None
+            log.warning(f"Qwen3-VL failed: {e} — using fallback")
+            return self._fallback_understand(furniture_items)
+
 
     def _clean_response(self, raw: str) -> str:
         """
@@ -464,22 +506,27 @@ JSON only. No other text."""
 
     def _load_ollama(self):
         """
-        Connect to local Ollama service on first use.
+        Verify local Ollama service is reachable via REST API.
 
-        Gracefully degrades if Ollama isn't running —
-        the rest of the pipeline continues without style analysis.
+        We use direct HTTP requests instead of the ollama Python
+        client because the REST API supports chat_template_kwargs
+        (needed to disable Qwen3 thinking) regardless of client version.
+
+        Sets self._ollama_ready = True if reachable, False otherwise.
         """
-        if self._ollama_client is not None:
+        if hasattr(self, "_ollama_ready"):
             return
+
         try:
-            import ollama
-            ollama.list()
-            self._ollama_client = ollama
-            log.info(f"Ollama connected ✅ | model={self.qwen_model}")
+            import requests as _req
+            r = _req.get("http://localhost:11434/api/tags", timeout=3)
+            r.raise_for_status()
+            self._ollama_ready = True
+            log.info(f"Ollama REST API connected ✅ | model={self.qwen_model}")
         except Exception as e:
+            self._ollama_ready = False
             log.warning(
-                f"Ollama not available: {e} | "
+                f"Ollama not reachable: {e} | "
                 f"Run 'ollama serve' in another terminal. "
                 f"Continuing without scene understanding."
             )
-            self._ollama_client = None

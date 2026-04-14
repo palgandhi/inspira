@@ -113,3 +113,30 @@ class FurniturePlacement:
     scale:            float = 1.0        # Scale factor
     is_valid:         bool  = True       # Passes collision/clearance checks
     validation_note:  str   = ""         # Why invalid if is_valid=False
+
+
+@dataclass
+class Affordance:
+    """
+    A single affordance prediction for an object.
+
+    Produced by: AffordanceEngine (Module 3, future)
+    Used in:     AdaptedLayout validation and frontend display
+
+    Attributes:
+        action:     What the robot/user can do with this object.
+                    Must be one of AFFORDANCE_ACTIONS in constants.py.
+        confidence: How confident the model is. 0.0 to 1.0.
+        reason:     Natural language explanation.
+    """
+    action:     str
+    confidence: float
+    reason:     str = ""
+
+    def __post_init__(self):
+        from inspira.utils.constants import AFFORDANCE_ACTIONS
+        assert self.action in AFFORDANCE_ACTIONS, \
+            f"Unknown affordance: '{self.action}'. " \
+            f"Must be one of: {AFFORDANCE_ACTIONS}"
+        assert 0.0 <= self.confidence <= 1.0, \
+            f"Confidence must be in [0, 1], got {self.confidence}"

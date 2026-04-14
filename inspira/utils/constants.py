@@ -43,6 +43,20 @@ STYLE_CATEGORIES = [
     "modern", "traditional", "mid-century modern",
     "contemporary", "rustic", "art deco",
 ]
+# ── Affordance Actions ─────────────────────────────────────────────────
+AFFORDANCE_ACTIONS = [
+    "navigable_to",
+    "pushable",
+    "openable",
+    "sittable",
+    "pickable",
+    "avoidable",
+    "interactable",
+    "containable",
+    "supportive",
+    "climbable",
+]
+
 
 # ── Adaptation Engine ──────────────────────────────────────────────────
 MIN_CLEARANCE_M        = 0.6    # Minimum walkway width in metres
