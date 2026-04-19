@@ -9,15 +9,15 @@ export default function LandingPage() {
 
       {/* Navbar */}
       <nav className="fixed top-0 w-full z-50 flex items-center justify-between
-                      px-8 py-4 backdrop-blur-md bg-black/30 border-b border-white/10">
-        <div className="flex items-center gap-2">
+                      px-8 py-4 backdrop-blur-md bg-black/40 border-b border-white/10">
+        <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600" />
-          <span className="text-xl font-bold tracking-tight">Inspira</span>
+          <span className="text-lg font-bold tracking-tight">Inspira</span>
         </div>
         <button
           onClick={() => navigate('/upload')}
-          className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500
-                     text-sm font-medium transition-all duration-200"
+          className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500
+                     text-sm font-semibold transition-all duration-200"
         >
           Try it free
         </button>
@@ -26,149 +26,199 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="relative flex flex-col items-center justify-center
                           min-h-screen text-center px-6 pt-20">
+
+        {/* Background glow */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2
-                          w-[600px] h-[600px] rounded-full bg-blue-600/20 blur-[120px]" />
-          <div className="absolute top-1/2 left-1/3
-                          w-[400px] h-[400px] rounded-full bg-purple-600/15 blur-[100px]" />
+                          w-[500px] h-[500px] rounded-full bg-blue-600/15 blur-[100px]" />
+          <div className="absolute top-2/3 left-1/4
+                          w-[300px] h-[300px] rounded-full bg-purple-600/10 blur-[80px]" />
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="relative z-10 max-w-4xl"
+          transition={{ duration: 0.7 }}
+          className="relative z-10 max-w-3xl"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full
-                          bg-blue-500/10 border border-blue-500/30 text-blue-400
-                          text-sm font-medium mb-8">
-            <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full
+                          bg-blue-500/10 border border-blue-500/25 text-blue-400
+                          text-xs font-medium mb-10 tracking-wide">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
             Powered by 3D Gaussian Splatting
           </div>
 
-          <h1 className="text-6xl md:text-7xl font-extrabold leading-tight mb-6 tracking-tight">
-            See your room
-            <span className="block bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400
+          {/* Headline */}
+          <h1 className="text-5xl md:text-6xl font-extrabold leading-[1.1]
+                         tracking-tight mb-6">
+            <span className="text-white">Turn design inspiration</span>
+            <br />
+            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400
                              bg-clip-text text-transparent">
-              the way a designer does.
+              into your actual room.
             </span>
           </h1>
 
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Upload any Pinterest inspiration. Upload photos of your room.
-            Inspira reconstructs your space in 3D and shows you exactly
-            how that design would look — before you buy anything.
+          {/* Subheadline */}
+          <p className="text-lg text-gray-400 max-w-xl mx-auto mb-10 leading-relaxed">
+            Upload a Pinterest photo. Take 20 photos of your room.
+            Inspira reconstructs your space in 3D and shows you
+            exactly how that design fits — before you spend a rupee.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {/* CTA buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => navigate('/upload')}
-              className="px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600
+              className="px-7 py-3.5 rounded-xl
+                         bg-gradient-to-r from-blue-600 to-purple-600
                          hover:from-blue-500 hover:to-purple-500
-                         text-lg font-semibold transition-all duration-200
-                         shadow-lg shadow-blue-500/25"
+                         text-base font-semibold transition-all duration-200
+                         shadow-lg shadow-blue-500/20"
             >
               Try Inspira Free →
             </motion.button>
-            <button className="px-8 py-4 rounded-xl border border-white/20
-                               hover:border-white/40 text-gray-300 hover:text-white
-                               text-lg font-medium transition-all duration-200">
-              Watch demo
+            <button
+              className="px-7 py-3.5 rounded-xl
+                         bg-white/5 hover:bg-white/10
+                         border border-white/15 hover:border-white/30
+                         text-gray-300 hover:text-white
+                         text-base font-medium transition-all duration-200"
+            >
+              Watch demo ▶
             </button>
           </div>
+
+          {/* Social proof */}
+          <p className="mt-8 text-xs text-gray-600">
+            Built on CLIP · LLaVA · 3DGS · Grounded-SAM · Depth Anything V2
+          </p>
         </motion.div>
 
+        {/* Scroll indicator */}
         <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ repeat: Infinity, duration: 2 }}
-          className="absolute bottom-8 text-gray-600 text-sm flex flex-col items-center gap-2"
+          animate={{ y: [0, 6, 0] }}
+          transition={{ repeat: Infinity, duration: 2.5 }}
+          className="absolute bottom-10 text-gray-600 text-xs
+                     flex flex-col items-center gap-1"
         >
-          <span>Scroll to learn more</span>
+          <span>scroll</span>
           <span>↓</span>
         </motion.div>
       </section>
 
       {/* How it works */}
-      <section className="py-32 px-6">
-        <div className="max-w-6xl mx-auto">
+      <section className="py-28 px-6">
+        <div className="max-w-5xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-20"
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
           >
-            <h2 className="text-4xl font-bold mb-4">How Inspira works</h2>
-            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-              Three steps from inspiration to your actual room — in 3D.
+            <p className="text-xs font-semibold uppercase tracking-widest
+                          text-blue-400 mb-3">
+              How it works
+            </p>
+            <h2 className="text-3xl font-bold text-white mb-3">
+              From saved image to furnished room
+            </h2>
+            <p className="text-gray-500 max-w-lg mx-auto">
+              Three steps. No designer needed. No guesswork.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
                 step: "01", icon: "🖼️",
                 title: "Upload your inspiration",
-                desc: "Any Pinterest screenshot or design photo. AI detects every piece of furniture, extracts the style, and reads the colour palette.",
-                color: "from-blue-500/20 to-blue-600/5",
-                border: "border-blue-500/30",
+                desc: "Any Pinterest or Instagram design photo. We detect furniture, extract the colour palette, and identify the interior style automatically.",
+                border: "border-blue-500/20",
+                glow: "bg-blue-500/5",
               },
               {
                 step: "02", icon: "📸",
-                title: "Scan your room",
-                desc: "Take 15-20 photos from different angles. Our 3D Gaussian Splatting pipeline reconstructs your exact space with true geometry.",
-                color: "from-purple-500/20 to-purple-600/5",
-                border: "border-purple-500/30",
+                title: "Photograph your room",
+                desc: "Take 15–20 overlapping photos of your room. Our 3D Gaussian Splatting pipeline reconstructs the true geometry of your space.",
+                border: "border-purple-500/20",
+                glow: "bg-purple-500/5",
               },
               {
-                step: "03", icon: "🏠",
-                title: "See the result in 3D",
-                desc: "Walk through your room furnished in the inspiration style. Every piece correctly scaled to your actual dimensions.",
-                color: "from-pink-500/20 to-pink-600/5",
-                border: "border-pink-500/30",
+                step: "03", icon: "✨",
+                title: "Explore in 3D",
+                desc: "Walk through your room as it would look in the inspiration style. Every piece of furniture is scaled to your actual dimensions.",
+                border: "border-pink-500/20",
+                glow: "bg-pink-500/5",
               },
             ].map((item, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: i * 0.15 }}
-                className={`p-8 rounded-2xl bg-gradient-to-b ${item.color}
-                            border ${item.border} backdrop-blur-sm`}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                viewport={{ once: true }}
+                className={`p-7 rounded-2xl ${item.glow}
+                            border ${item.border}`}
               >
-                <div className="text-5xl mb-6">{item.icon}</div>
-                <div className="text-sm font-mono text-gray-500 mb-2">{item.step}</div>
-                <h3 className="text-xl font-bold mb-3">{item.title}</h3>
-                <p className="text-gray-400 leading-relaxed">{item.desc}</p>
+                <div className="text-4xl mb-5">{item.icon}</div>
+                <div className="text-xs font-mono text-gray-600 mb-2">
+                  Step {item.step}
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  {item.title}
+                </h3>
+                <p className="text-gray-500 text-sm leading-relaxed">
+                  {item.desc}
+                </p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Tech stack */}
+      {/* Problem statement */}
       <section className="py-20 px-6 border-t border-white/5">
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="text-gray-500 text-sm font-medium uppercase tracking-widest mb-8">
-            Built on cutting-edge computer vision research
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            {["3D Gaussian Splatting","CLIP Vision-Language","Grounded-SAM",
-              "Depth Anything V2","LLaVA 7B","Three.js WebGL"].map((tech, i) => (
-              <span key={i} className="px-4 py-2 rounded-full bg-white/5 border border-white/10
-                                       text-gray-400 text-sm font-medium">
-                {tech}
-              </span>
-            ))}
-          </div>
+        <div className="max-w-3xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl font-bold mb-6">
+              450 million people save design inspiration every month.
+              <span className="text-gray-500"> Almost none recreate it.</span>
+            </h2>
+            <p className="text-gray-500 leading-relaxed mb-8">
+              The gap between a saved Pinterest photo and your actual room
+              has always been impossible to bridge — until now. Inspira uses
+              the same 3D perception technology powering Boston Dynamics and
+              Figure AI robots, applied to a problem anyone with a home faces.
+            </p>
+            <button
+              onClick={() => navigate('/upload')}
+              className="px-7 py-3.5 rounded-xl bg-white text-black
+                         font-semibold hover:bg-gray-100 transition-all duration-200"
+            >
+              See it in action →
+            </button>
+          </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-6 border-t border-white/5 text-center text-gray-600 text-sm">
-        <p>Inspira — Computer Vision Research Project · Built with ❤️ and 3DGS</p>
+      <footer className="py-10 px-6 border-t border-white/5
+                         flex items-center justify-between text-gray-600 text-xs">
+        <span>© 2026 Inspira</span>
+        <span>Computer Vision Research Project</span>
+        <span>Built with 3DGS + CLIP + LLaVA</span>
       </footer>
+
     </div>
   )
 }
