@@ -1,15 +1,63 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "@fontsource/space-mono/400.css";
+@import "@fontsource/space-mono/700.css";
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap');
 
-body {
-  font-family: 'Inter', sans-serif;
-  background: #0a0a0f;
-  color: #ffffff;
-  overflow-x: hidden;
+:root {
+  --bg:       #080809;
+  --bg-card:  #0f0f12;
+  --border:   rgba(255,255,255,0.06);
+  --text:     #e8e8e2;
+  --muted:    #44444f;
+  --dim:      #2a2a32;
+  --accent:   #c8ff00;        /* darknode uses a sharp neon accent */
+  --mono:     'Space Mono', monospace;
+  --display:  'Bebas Neue', sans-serif;
+  --body:     'Inter', sans-serif;
 }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #111; }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--body);
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  cursor: none;
+}
+
+/* Custom cursor */
+.cursor {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transition: transform 0.1s ease;
+  mix-blend-mode: difference;
+}
+
+/* Monospaced utility */
+.mono { font-family: var(--mono); }
+.display { font-family: var(--display); }
+
+/* Thin horizontal rule */
+.rule { border: none; border-top: 1px solid var(--border); }
+
+/* Section tag style [ label ] */
+.tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+::-webkit-scrollbar { width: 2px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--dim); }
