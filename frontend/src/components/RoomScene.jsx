@@ -1,120 +1,131 @@
-/**
- * RoomScene — Three.js animated particle cloud
- * Simulates what a Gaussian Splat looks like before it resolves
- * into a clear room. Particles slowly orbit and drift.
- */
 import { useRef, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 
 function GaussianParticles() {
-  const meshRef  = useRef()
-  const count    = 4000
+  const ref   = useRef()
+  const count = 6000
 
-  // Generate particles in a room-like distribution
   const [positions, colors, sizes] = useMemo(() => {
-    const pos   = new Float32Array(count * 3)
-    const col   = new Float32Array(count * 3)
-    const sz    = new Float32Array(count)
+    const pos = new Float32Array(count * 3)
+    const col = new Float32Array(count * 3)
+    const sz  = new Float32Array(count)
 
-    const roomW = 4, roomH = 3, roomD = 4
+    const W = 3.5, H = 2.8, D = 3.5
 
     for (let i = 0; i < count; i++) {
       const r = Math.random()
 
-      if (r < 0.25) {
-        // Floor
-        pos[i*3]   = (Math.random() - 0.5) * roomW
-        pos[i*3+1] = -roomH/2 + (Math.random() * 0.1)
-        pos[i*3+2] = (Math.random() - 0.5) * roomD
-        col[i*3]   = 0.6; col[i*3+1] = 0.55; col[i*3+2] = 0.5
-      } else if (r < 0.5) {
-        // Back wall
-        pos[i*3]   = (Math.random() - 0.5) * roomW
-        pos[i*3+1] = (Math.random() - 0.5) * roomH
-        pos[i*3+2] = -roomD/2 + (Math.random() * 0.1)
-        col[i*3]   = 0.85; col[i*3+1] = 0.85; col[i*3+2] = 0.82
-      } else if (r < 0.65) {
-        // Bed — warm tones
-        pos[i*3]   = (Math.random() - 0.5) * 1.8
-        pos[i*3+1] = -roomH/2 + 0.3 + Math.random() * 0.4
-        pos[i*3+2] = (Math.random() - 0.5) * 1.2 - 0.5
-        col[i*3]   = 0.35; col[i*3+1] = 0.35; col[i*3+2] = 0.45
-      } else if (r < 0.78) {
-        // Wardrobe — dark
-        pos[i*3]   = -roomW/2 + 0.3 + Math.random() * 0.6
-        pos[i*3+1] = (Math.random() - 0.5) * roomH * 0.8
-        pos[i*3+2] = (Math.random() - 0.5) * 0.8
-        col[i*3]   = 0.2; col[i*3+1] = 0.15; col[i*3+2] = 0.12
-      } else if (r < 0.88) {
-        // Window — bright
-        pos[i*3]   = (Math.random() - 0.5) * 1.2
-        pos[i*3+1] = 0.5 + Math.random() * 0.8
-        pos[i*3+2] = -roomD/2 + 0.05
-        col[i*3]   = 0.9; col[i*3+1] = 0.95; col[i*3+2] = 0.8
-      } else {
-        // Scattered noise
-        pos[i*3]   = (Math.random() - 0.5) * roomW * 1.1
-        pos[i*3+1] = (Math.random() - 0.5) * roomH * 1.1
-        pos[i*3+2] = (Math.random() - 0.5) * roomD * 1.1
-        col[i*3]   = 0.3; col[i*3+1] = 0.3; col[i*3+2] = 0.3
-      }
+      if (r < 0.20) {
+        // Floor — dense, warm grey
+        pos[i*3]   = (Math.random()-0.5)*W*1.1
+        pos[i*3+1] = -H/2 + Math.random()*0.08
+        pos[i*3+2] = (Math.random()-0.5)*D*1.1
+        col[i*3] = 0.65; col[i*3+1] = 0.62; col[i*3+2] = 0.58
+        sz[i] = Math.random()*3+1
 
-      sz[i] = Math.random() * 2.5 + 0.5
+      } else if (r < 0.38) {
+        // Back wall — light
+        pos[i*3]   = (Math.random()-0.5)*W
+        pos[i*3+1] = (Math.random()-0.5)*H
+        pos[i*3+2] = -D/2 + Math.random()*0.08
+        col[i*3] = 0.88; col[i*3+1] = 0.88; col[i*3+2] = 0.85
+        sz[i] = Math.random()*2+0.5
+
+      } else if (r < 0.50) {
+        // Left wall
+        pos[i*3]   = -W/2 + Math.random()*0.08
+        pos[i*3+1] = (Math.random()-0.5)*H
+        pos[i*3+2] = (Math.random()-0.5)*D
+        col[i*3] = 0.75; col[i*3+1] = 0.75; col[i*3+2] = 0.72
+        sz[i] = Math.random()*2+0.5
+
+      } else if (r < 0.60) {
+        // Bed — blue-grey cluster
+        pos[i*3]   = (Math.random()-0.5)*1.6
+        pos[i*3+1] = -H/2+0.25+Math.random()*0.35
+        pos[i*3+2] = (Math.random()-0.5)*1.0-0.3
+        col[i*3] = 0.40; col[i*3+1] = 0.42; col[i*3+2] = 0.52
+        sz[i] = Math.random()*4+2
+
+      } else if (r < 0.68) {
+        // Wardrobe — dark brown
+        pos[i*3]   = -W/2+0.25+Math.random()*0.5
+        pos[i*3+1] = (Math.random()-0.5)*H*0.9
+        pos[i*3+2] = -D/2+0.5+Math.random()*0.4
+        col[i*3] = 0.22; col[i*3+1] = 0.16; col[i*3+2] = 0.12
+        sz[i] = Math.random()*3+1.5
+
+      } else if (r < 0.74) {
+        // Window — bright white/yellow
+        pos[i*3]   = (Math.random()-0.5)*1.1
+        pos[i*3+1] = 0.4+Math.random()*0.7
+        pos[i*3+2] = -D/2+0.04
+        col[i*3] = 0.95; col[i*3+1] = 1.0; col[i*3+2] = 0.75
+        sz[i] = Math.random()*3+1
+
+      } else if (r < 0.80) {
+        // Ceiling — very sparse
+        pos[i*3]   = (Math.random()-0.5)*W
+        pos[i*3+1] = H/2-Math.random()*0.12
+        pos[i*3+2] = (Math.random()-0.5)*D
+        col[i*3] = 0.9; col[i*3+1] = 0.9; col[i*3+2] = 0.9
+        sz[i] = Math.random()*1.5+0.3
+
+      } else {
+        // Scatter / noise — very dim
+        pos[i*3]   = (Math.random()-0.5)*W*1.3
+        pos[i*3+1] = (Math.random()-0.5)*H*1.2
+        pos[i*3+2] = (Math.random()-0.5)*D*1.3
+        col[i*3] = 0.25; col[i*3+1] = 0.25; col[i*3+2] = 0.28
+        sz[i] = Math.random()*1.5+0.2
+      }
     }
     return [pos, col, sz]
   }, [])
 
-  // Slow rotation + subtle breathing animation
   useFrame(({ clock }) => {
-    if (!meshRef.current) return
+    if (!ref.current) return
     const t = clock.getElapsedTime()
-    meshRef.current.rotation.y = t * 0.08
-    meshRef.current.rotation.x = Math.sin(t * 0.04) * 0.08
+    ref.current.rotation.y = t * 0.07
+    ref.current.rotation.x = Math.sin(t*0.03) * 0.06
   })
 
-  const geometry = useMemo(() => {
-    const geo = new THREE.BufferGeometry()
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-    geo.setAttribute('color',    new THREE.BufferAttribute(colors, 3))
-    geo.setAttribute('size',     new THREE.BufferAttribute(sizes, 1))
-    return geo
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    g.setAttribute('color',    new THREE.BufferAttribute(colors, 3))
+    g.setAttribute('size',     new THREE.BufferAttribute(sizes, 1))
+    return g
   }, [positions, colors, sizes])
 
   return (
-    <points ref={meshRef} geometry={geometry}>
+    <points ref={ref} geometry={geo}>
       <pointsMaterial
-        size={0.04}
+        size={0.055}
         vertexColors
         transparent
-        opacity={0.85}
+        opacity={0.9}
         sizeAttenuation
       />
     </points>
   )
 }
 
-function WireframeRoom() {
+function RoomWireframe() {
   const ref = useRef()
   useFrame(({ clock }) => {
     if (!ref.current) return
-    ref.current.rotation.y = clock.getElapsedTime() * 0.08
+    ref.current.rotation.y = clock.getElapsedTime() * 0.07
+    ref.current.rotation.x = Math.sin(clock.getElapsedTime()*0.03) * 0.06
   })
 
   return (
     <group ref={ref}>
-      {/* Room box wireframe */}
       <lineSegments>
-        <edgesGeometry args={[new THREE.BoxGeometry(4, 3, 4)]} />
-        <lineBasicMaterial color="#c8ff00" transparent opacity={0.08} />
+        <edgesGeometry args={[new THREE.BoxGeometry(3.5, 2.8, 3.5)]} />
+        <lineBasicMaterial color="#c8ff00" transparent opacity={0.06} />
       </lineSegments>
-      {/* Floor grid */}
-      <gridHelper args={[4, 8, '#c8ff00', '#c8ff00']}
-        position={[0, -1.5, 0]}
-        material-opacity={0.06}
-        material-transparent={true}
-      />
     </group>
   )
 }
@@ -122,13 +133,12 @@ function WireframeRoom() {
 export default function RoomScene() {
   return (
     <Canvas
-      camera={{ position: [0, 1, 6], fov: 50 }}
-      style={{ background: 'transparent' }}
-      gl={{ antialias: true, alpha: true }}
+      camera={{ position:[0, 0.5, 5.5], fov:45 }}
+      style={{ background:'transparent' }}
+      gl={{ antialias:true, alpha:true }}
     >
-      <ambientLight intensity={0.5} />
       <GaussianParticles />
-      <WireframeRoom />
+      <RoomWireframe />
     </Canvas>
   )
 }

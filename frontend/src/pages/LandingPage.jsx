@@ -4,7 +4,6 @@ import { motion, useScroll, useTransform,
          AnimatePresence, useInView } from 'framer-motion'
 import RoomScene from '../components/RoomScene'
 
-/* ── Coords ── */
 function Coords() {
   const [pos, setPos] = useState({ x:0, y:0 })
   useEffect(() => {
@@ -16,7 +15,7 @@ function Coords() {
     <div style={{
       position:'fixed', bottom:24, right:32,
       fontFamily:'var(--mono)', fontSize:10,
-      color:'rgba(255,255,255,0.2)', zIndex:50,
+      color:'rgba(255,255,255,0.18)', zIndex:50,
       letterSpacing:'0.12em', lineHeight:2,
       pointerEvents:'none', userSelect:'none',
     }}>
@@ -26,7 +25,6 @@ function Coords() {
   )
 }
 
-/* ── Loader ── */
 function Loader({ onDone }) {
   const [pct, setPct] = useState(0)
   useEffect(() => {
@@ -40,35 +38,29 @@ function Loader({ onDone }) {
     requestAnimationFrame(frame)
   }, [onDone])
   return (
-    <motion.div
-      exit={{ opacity:0, transition:{ duration:0.6 } }}
+    <motion.div exit={{ opacity:0 }} transition={{ duration:0.6 }}
       style={{
         position:'fixed', inset:0, background:'var(--bg)',
         display:'flex', flexDirection:'column',
         alignItems:'center', justifyContent:'center', zIndex:1000,
       }}
     >
-      <motion.div
-        animate={{ scale:[1, 1.01, 1] }}
-        transition={{ repeat:Infinity, duration:1.5 }}
-        style={{
-          fontFamily:'var(--display)',
-          fontSize:'clamp(100px,22vw,220px)',
-          color:'var(--text)', lineHeight:1,
-          letterSpacing:'-0.02em',
-        }}
-      >{pct}%</motion.div>
+      <div style={{
+        fontFamily:'var(--display)',
+        fontSize:'clamp(120px,25vw,260px)',
+        color:'var(--text)', lineHeight:1,
+        letterSpacing:'-0.02em',
+      }}>{pct}%</div>
       <div style={{
         fontFamily:'var(--mono)', fontSize:10,
         color:'rgba(255,255,255,0.2)', marginTop:24,
         letterSpacing:'0.25em', textTransform:'uppercase',
       }}>Initialising Inspira</div>
-      {/* Loading bar */}
       <div style={{
-        position:'absolute', bottom:0, left:0,
-        height:1, background:'var(--border)', width:'100%',
+        position:'absolute', bottom:0, left:0, right:0,
+        height:1, background:'var(--border)',
       }}>
-        <motion.div style={{
+        <div style={{
           height:'100%', background:'var(--accent)',
           width:`${pct}%`, transition:'width 0.05s linear',
         }}/>
@@ -77,29 +69,28 @@ function Loader({ onDone }) {
   )
 }
 
-/* ── Ticker ── */
-function Ticker({ items, speed=20 }) {
+function Ticker({ items, speed=22 }) {
   return (
     <div style={{
       overflow:'hidden',
       borderTop:'1px solid var(--border)',
       borderBottom:'1px solid var(--border)',
-      padding:'12px 0',
-      background:'rgba(200,255,0,0.02)',
+      padding:'13px 0',
+      background:'rgba(200,255,0,0.015)',
     }}>
       <motion.div
         animate={{ x:['0%','-50%'] }}
         transition={{ repeat:Infinity, duration:speed, ease:'linear' }}
-        style={{ display:'flex', gap:56, whiteSpace:'nowrap', width:'max-content' }}
+        style={{ display:'flex', gap:64, whiteSpace:'nowrap', width:'max-content' }}
       >
         {[...items,...items].map((item,i) => (
           <span key={i} style={{
             fontFamily:'var(--mono)', fontSize:10,
-            color:'rgba(255,255,255,0.22)', letterSpacing:'0.22em',
+            color:'rgba(255,255,255,0.2)', letterSpacing:'0.22em',
             textTransform:'uppercase',
           }}>
             {item}
-            <span style={{color:'var(--accent)', marginLeft:40, opacity:0.6}}>×</span>
+            <span style={{color:'var(--accent)',marginLeft:48,opacity:0.5}}>·</span>
           </span>
         ))}
       </motion.div>
@@ -107,7 +98,6 @@ function Ticker({ items, speed=20 }) {
   )
 }
 
-/* ── Animated text reveal ── */
 function RevealText({ children, delay=0, style={} }) {
   const ref = useRef()
   const inView = useInView(ref, { once:true, margin:'-80px' })
@@ -117,39 +107,18 @@ function RevealText({ children, delay=0, style={} }) {
       animate={inView ? { opacity:1, y:0 } : {}}
       transition={{ duration:0.9, delay, ease:[0.16,1,0.3,1] }}
       style={style}
-    >
-      {children}
-    </motion.div>
+    >{children}</motion.div>
   )
 }
 
-/* ── Section ── */
-function Section({ tag, children, style={} }) {
-  return (
-    <section style={{
-      padding:'140px 48px',
-      borderBottom:'1px solid var(--border)',
-      ...style,
-    }}>
-      <div style={{
-        fontFamily:'var(--mono)', fontSize:10,
-        color:'rgba(255,255,255,0.2)', letterSpacing:'0.2em',
-        textTransform:'uppercase', marginBottom:80,
-      }}>[ {tag} ]</div>
-      {children}
-    </section>
-  )
-}
-
-/* ── Main ── */
 export default function LandingPage() {
-  const navigate = useNavigate()
+  const navigate  = useNavigate()
   const [loaded, setLoaded] = useState(false)
   const { scrollY } = useScroll()
 
   const heroOpacity = useTransform(scrollY, [0,500], [1,0])
-  const heroScale   = useTransform(scrollY, [0,500], [1,0.96])
-  const sceneY      = useTransform(scrollY, [0,600], [0,80])
+  const heroY       = useTransform(scrollY, [0,500], [0,-60])
+  const sceneScale  = useTransform(scrollY, [0,400], [1,1.06])
 
   const handleDone = useCallback(() => setLoaded(true), [])
 
@@ -169,12 +138,12 @@ export default function LandingPage() {
     <motion.div
       initial={{ opacity:0 }}
       animate={{ opacity:1 }}
-      transition={{ duration:0.6 }}
+      transition={{ duration:0.5 }}
       style={{ background:'var(--bg)', minHeight:'100vh', color:'var(--text)' }}
     >
       <Coords/>
 
-      {/* ── Navbar ── */}
+      {/* Navbar */}
       <motion.nav
         initial={{ y:-60, opacity:0 }}
         animate={{ y:0, opacity:1 }}
@@ -190,21 +159,21 @@ export default function LandingPage() {
       >
         <div style={{
           fontFamily:'var(--display)', fontSize:22,
-          letterSpacing:'0.08em', color:'var(--text)',
+          letterSpacing:'0.08em',
         }}>INSPIRA</div>
 
         <div style={{
           display:'flex', gap:48,
           fontFamily:'var(--mono)', fontSize:10,
           letterSpacing:'0.18em', textTransform:'uppercase',
+          color:'rgba(255,255,255,0.28)',
         }}>
           {['About','How it works','Research'].map(item => (
             <a key={item} href="#" style={{
-              color:'rgba(255,255,255,0.3)', textDecoration:'none',
-              transition:'color 0.2s',
+              color:'inherit', textDecoration:'none', transition:'color 0.2s',
             }}
             onMouseEnter={e=>e.target.style.color='var(--text)'}
-            onMouseLeave={e=>e.target.style.color='rgba(255,255,255,0.3)'}>
+            onMouseLeave={e=>e.target.style.color='rgba(255,255,255,0.28)'}>
               {item}
             </a>
           ))}
@@ -215,52 +184,69 @@ export default function LandingPage() {
           letterSpacing:'0.18em', textTransform:'uppercase',
           color:'var(--bg)', background:'var(--accent)',
           border:'none', padding:'10px 28px', cursor:'none',
-          transition:'opacity 0.15s',
-        }}
-        onMouseEnter={e=>e.currentTarget.style.opacity='0.85'}
-        onMouseLeave={e=>e.currentTarget.style.opacity='1'}>
-          Try free →
-        </button>
+        }}>Try free →</button>
       </motion.nav>
 
-      {/* ── Hero ── */}
-      <motion.section style={{
-        opacity: heroOpacity,
-        scale:   heroScale,
-        minHeight:'100vh',
-        display:'grid',
-        gridTemplateColumns:'1fr 1fr',
-        alignItems:'center',
-        padding:'100px 48px 60px',
-        gap:0,
-        position:'sticky', top:0, zIndex:1,
-      }}>
-        {/* Left — text */}
-        <div style={{ position:'relative', zIndex:2 }}>
+      {/* ── HERO ── */}
+      <motion.section
+        style={{ opacity:heroOpacity, y:heroY }}
+        className="hero-section"
+      >
+        {/* Full-screen 3D background */}
+        <motion.div
+          style={{
+            position:'absolute', inset:0, zIndex:0,
+            scale: sceneScale,
+          }}
+          initial={{ opacity:0 }}
+          animate={{ opacity:1 }}
+          transition={{ duration:2, delay:0.2 }}
+        >
+          <RoomScene/>
+          {/* Dark vignette over 3D so text is readable */}
+          <div style={{
+            position:'absolute', inset:0,
+            background:`
+              radial-gradient(ellipse 60% 100% at 30% 50%,
+                rgba(8,8,9,0.96) 0%,
+                rgba(8,8,9,0.7) 55%,
+                rgba(8,8,9,0.1) 100%)
+            `,
+          }}/>
+        </motion.div>
+
+        {/* Hero content — over 3D */}
+        <div style={{
+          position:'relative', zIndex:1,
+          display:'flex', flexDirection:'column',
+          justifyContent:'flex-end',
+          height:'100%',
+          padding:'0 48px 80px',
+        }}>
+          {/* Tag */}
           <motion.div
             initial={{ opacity:0 }}
             animate={{ opacity:1 }}
-            transition={{ duration:0.6, delay:0.2 }}
+            transition={{ duration:0.7, delay:0.3 }}
             style={{
               fontFamily:'var(--mono)', fontSize:10,
               color:'rgba(255,255,255,0.22)', letterSpacing:'0.2em',
-              textTransform:'uppercase', marginBottom:48,
+              textTransform:'uppercase', marginBottom:32,
             }}
-          >
-            [ 3D Gaussian Splatting · Computer Vision ]
-          </motion.div>
+          >[ 3D Gaussian Splatting · Computer Vision · 2026 ]</motion.div>
 
+          {/* Main headline */}
           <motion.h1
             initial={{ opacity:0, y:60 }}
             animate={{ opacity:1, y:0 }}
-            transition={{ duration:1, delay:0.25, ease:[0.16,1,0.3,1] }}
+            transition={{ duration:1, delay:0.35, ease:[0.16,1,0.3,1] }}
             style={{
               fontFamily:'var(--display)',
-              fontSize:'clamp(60px,8vw,110px)',
-              lineHeight:0.93,
+              fontSize:'clamp(80px,12vw,160px)',
+              lineHeight:0.9,
               letterSpacing:'-0.01em',
-              color:'var(--text)',
-              marginBottom:44,
+              marginBottom:40,
+              maxWidth:'60vw',
             }}
           >
             YOUR ROOM.<br/>
@@ -268,109 +254,113 @@ export default function LandingPage() {
             IN 3D.
           </motion.h1>
 
-          <motion.p
+          {/* Bottom row — description + CTA */}
+          <motion.div
             initial={{ opacity:0, y:20 }}
             animate={{ opacity:1, y:0 }}
-            transition={{ duration:0.8, delay:0.5 }}
+            transition={{ duration:0.8, delay:0.6 }}
             style={{
+              display:'flex', alignItems:'flex-end',
+              justifyContent:'space-between', flexWrap:'wrap', gap:40,
+            }}
+          >
+            <p style={{
               fontFamily:'var(--body)', fontSize:15,
-              lineHeight:1.9, color:'rgba(255,255,255,0.48)',
-              fontWeight:300, maxWidth:400, marginBottom:52,
-            }}
-          >
-            Upload a Pinterest inspiration.
-            Photograph your room. Inspira reconstructs
-            your space in 3D and adapts the design
-            to your actual dimensions — before you
-            spend anything.
-          </motion.p>
+              lineHeight:1.85, color:'rgba(255,255,255,0.45)',
+              fontWeight:300, maxWidth:380,
+            }}>
+              Upload a Pinterest inspiration.
+              Photograph your room.
+              Inspira reconstructs your space in 3D
+              and adapts the design to your actual
+              dimensions — before you spend anything.
+            </p>
 
-          <motion.div
-            initial={{ opacity:0 }}
-            animate={{ opacity:1 }}
-            transition={{ duration:0.6, delay:0.7 }}
-            style={{ display:'flex', alignItems:'center', gap:28 }}
-          >
-            <button onClick={()=>navigate('/upload')} style={{
-              fontFamily:'var(--mono)', fontSize:11,
-              letterSpacing:'0.18em', textTransform:'uppercase',
-              color:'var(--bg)', background:'var(--accent)',
-              border:'none', padding:'14px 36px', cursor:'none',
-              transition:'opacity 0.15s',
-            }}
-            onMouseEnter={e=>e.currentTarget.style.opacity='0.85'}
-            onMouseLeave={e=>e.currentTarget.style.opacity='1'}>
-              Start now →
-            </button>
-            <span style={{
-              fontFamily:'var(--mono)', fontSize:10,
-              color:'rgba(255,255,255,0.22)', letterSpacing:'0.12em',
-            }}>Free · No signup</span>
+            <div style={{ display:'flex', flexDirection:'column',
+                          alignItems:'flex-start', gap:16 }}>
+              <button onClick={()=>navigate('/upload')} style={{
+                fontFamily:'var(--mono)', fontSize:11,
+                letterSpacing:'0.2em', textTransform:'uppercase',
+                color:'var(--bg)', background:'var(--accent)',
+                border:'none', padding:'16px 44px', cursor:'none',
+                transition:'opacity 0.15s',
+              }}
+              onMouseEnter={e=>e.currentTarget.style.opacity='0.85'}
+              onMouseLeave={e=>e.currentTarget.style.opacity='1'}>
+                Start now →
+              </button>
+              <span style={{
+                fontFamily:'var(--mono)', fontSize:10,
+                color:'rgba(255,255,255,0.2)', letterSpacing:'0.12em',
+              }}>Free · No signup required</span>
+            </div>
           </motion.div>
+
+          {/* Scroll indicator */}
+          <div style={{
+            position:'absolute', bottom:40, left:'50%',
+            transform:'translateX(-50%)',
+            display:'flex', flexDirection:'column',
+            alignItems:'center', gap:10,
+            fontFamily:'var(--mono)', fontSize:10,
+            color:'rgba(255,255,255,0.2)',
+            letterSpacing:'0.2em', textTransform:'uppercase',
+          }}>
+            <span>Scroll</span>
+            <motion.div
+              animate={{ y:[0,10,0] }}
+              transition={{ repeat:Infinity, duration:2.5 }}
+              style={{ width:1, height:40, background:'rgba(255,255,255,0.15)' }}
+            />
+          </div>
         </div>
 
-        {/* Right — 3D scene */}
+        {/* 3D info overlay — top right */}
         <motion.div
-          style={{ y: sceneY }}
           initial={{ opacity:0 }}
           animate={{ opacity:1 }}
-          transition={{ duration:1.4, delay:0.3 }}
+          transition={{ duration:1, delay:0.8 }}
+          style={{
+            position:'absolute', top:100, right:48,
+            zIndex:2, textAlign:'right',
+          }}
         >
           <div style={{
-            height:520, position:'relative',
-            border:'1px solid rgba(200,255,0,0.1)',
+            fontFamily:'var(--mono)', fontSize:9,
+            color:'rgba(200,255,0,0.35)', letterSpacing:'0.15em',
+            textTransform:'uppercase', lineHeight:2.2,
           }}>
-            <RoomScene/>
-
-            {/* Overlay labels */}
-            <div style={{
-              position:'absolute', top:16, left:16,
-              fontFamily:'var(--mono)', fontSize:9,
-              color:'rgba(200,255,0,0.4)', letterSpacing:'0.15em',
-              pointerEvents:'none',
-            }}>[ LIVE 3D RECONSTRUCTION ]</div>
-
-            <div style={{
-              position:'absolute', bottom:16, right:16,
-              fontFamily:'var(--mono)', fontSize:9,
-              color:'rgba(255,255,255,0.18)', letterSpacing:'0.12em',
-              pointerEvents:'none',
-            }}>~94K GAUSSIANS · ROTATING</div>
-
-            {/* Corner decorations */}
-            {[
-              {top:0,left:0,borderTop:'1px solid var(--accent)',borderLeft:'1px solid var(--accent)',width:24,height:24},
-              {top:0,right:0,borderTop:'1px solid var(--accent)',borderRight:'1px solid var(--accent)',width:24,height:24},
-              {bottom:0,left:0,borderBottom:'1px solid var(--accent)',borderLeft:'1px solid var(--accent)',width:24,height:24},
-              {bottom:0,right:0,borderBottom:'1px solid var(--accent)',borderRight:'1px solid var(--accent)',width:24,height:24},
-            ].map((s,i) => (
-              <div key={i} style={{position:'absolute', opacity:0.5, ...s}}/>
-            ))}
+            <div>[ LIVE 3D RECONSTRUCTION ]</div>
+            <div style={{color:'rgba(255,255,255,0.15)'}}>~94K GAUSSIANS</div>
+            <div style={{color:'rgba(255,255,255,0.15)'}}>ROTATING · REAL-TIME</div>
           </div>
         </motion.div>
       </motion.section>
 
-      {/* Content below hero — positioned above sticky */}
+      {/* Content */}
       <div style={{ position:'relative', zIndex:2, background:'var(--bg)' }}>
-
-        {/* ── Ticker ── */}
         <Ticker items={TICKER}/>
 
         {/* ── About ── */}
-        <Section tag="About">
+        <section style={{
+          padding:'140px 48px',
+          borderBottom:'1px solid var(--border)',
+        }}>
+          <div style={{
+            fontFamily:'var(--mono)', fontSize:10,
+            color:'rgba(255,255,255,0.2)', letterSpacing:'0.2em',
+            textTransform:'uppercase', marginBottom:80,
+          }}>[ About ]</div>
+
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:80 }}>
             <RevealText>
               <h2 style={{
                 fontFamily:'var(--display)',
-                fontSize:'clamp(40px,5.5vw,80px)',
-                lineHeight:1.0, color:'var(--text)',
+                fontSize:'clamp(44px,6vw,88px)',
+                lineHeight:0.97, color:'var(--text)',
                 letterSpacing:'-0.01em',
               }}>
-                THE GAP<br/>
-                BETWEEN<br/>
-                INSPIRATION<br/>
-                AND REALITY<br/>
-                IS OVER.
+                THE GAP<br/>BETWEEN<br/>INSPIRATION<br/>AND REALITY<br/>IS OVER.
               </h2>
             </RevealText>
 
@@ -383,33 +373,39 @@ export default function LandingPage() {
                 450 million people save interior design inspiration every month on Pinterest.
                 Almost none of them successfully recreate it. The reason is not lack of
                 taste — it is the impossibility of translating a 2D image into a real 3D
-                space with real dimensions. Inspira solves that. Completely.
+                space with real dimensions. Inspira solves that.
               </p>
 
-              {/* Stats */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:40 }}>
+              <div style={{
+                display:'grid', gridTemplateColumns:'1fr 1fr', gap:0,
+              }}>
                 {[
-                  { n:'450M', label:'People searching for design inspiration monthly' },
-                  { n:'94K',  label:'3D Gaussians per room reconstruction' },
-                  { n:'< 60s', label:'Time to analyze an inspiration image' },
-                  { n:'100%',  label:'Based on true room geometry' },
+                  { n:'450M', label:'Design saves per month on Pinterest' },
+                  { n:'94K',  label:'Gaussians per room reconstruction' },
+                  { n:'< 60s', label:'To analyze an inspiration image' },
+                  { n:'True', label:'Room geometry — not an estimate' },
                 ].map((s,i) => (
                   <motion.div key={i}
                     initial={{ opacity:0, y:20 }}
                     whileInView={{ opacity:1, y:0 }}
-                    transition={{ duration:0.6, delay:i*0.1 }}
+                    transition={{ duration:0.6, delay:i*0.08 }}
                     viewport={{ once:true }}
-                    style={{ paddingTop:32, borderTop:'1px solid var(--border)' }}
+                    style={{
+                      padding:'32px 0',
+                      borderTop:'1px solid var(--border)',
+                      borderRight: i%2===0 ? '1px solid var(--border)' : 'none',
+                      paddingRight: i%2===0 ? 32 : 0,
+                      paddingLeft:  i%2===1 ? 32 : 0,
+                    }}
                   >
                     <div style={{
                       fontFamily:'var(--display)',
-                      fontSize:'clamp(36px,4vw,56px)',
-                      color:'var(--accent)', lineHeight:1,
-                      marginBottom:10,
+                      fontSize:'clamp(40px,5vw,64px)',
+                      color:'var(--accent)', lineHeight:1, marginBottom:10,
                     }}>{s.n}</div>
                     <div style={{
                       fontFamily:'var(--body)', fontSize:12,
-                      color:'rgba(255,255,255,0.38)',
+                      color:'rgba(255,255,255,0.35)',
                       lineHeight:1.6, fontWeight:300,
                     }}>{s.label}</div>
                   </motion.div>
@@ -417,36 +413,39 @@ export default function LandingPage() {
               </div>
             </RevealText>
           </div>
-        </Section>
+        </section>
 
-        {/* ── Ticker 2 ── */}
-        <Ticker items={['Upload inspiration','Reconstruct room','Adapt furniture',
-                        'Explore in 3D','No guesswork','True geometry',
-                        'AI-powered','Real dimensions']} speed={15}/>
+        <Ticker items={['Upload inspiration','Reconstruct room',
+                        'Adapt furniture','Explore in 3D',
+                        'No guesswork','True geometry',
+                        'AI-powered','Real dimensions']} speed={16}/>
 
         {/* ── How it works ── */}
-        <Section tag="How it works">
+        <section style={{ padding:'140px 48px', borderBottom:'1px solid var(--border)' }}>
+          <div style={{
+            fontFamily:'var(--mono)', fontSize:10,
+            color:'rgba(255,255,255,0.2)', letterSpacing:'0.2em',
+            textTransform:'uppercase', marginBottom:100,
+          }}>[ How it works ]</div>
+
           {[
             {
-              n:'01',
+              n:'01', accent:false,
               title:'UPLOAD YOUR\nINSPIRATION',
               body:'Any Pinterest screenshot or design photo. CLIP vision-language model detects every piece of furniture, extracts the colour palette, and identifies the interior style — automatically.',
               tags:['CLIP ViT-B/32','LLaVA 7B','Grounded-SAM'],
-              accent:false,
             },
             {
-              n:'02',
+              n:'02', accent:true,
               title:'PHOTOGRAPH\nYOUR ROOM',
               body:'15–20 overlapping photos from different angles. Our 3D Gaussian Splatting pipeline reconstructs the true geometry of your space — not an estimate. Real dimensions. Real depth.',
               tags:['3DGS · COLMAP','Depth Anything V2','94K Gaussians'],
-              accent:true,
             },
             {
-              n:'03',
+              n:'03', accent:false,
               title:'EXPLORE\nIN 3D',
-              body:'Walk through your room furnished in the inspiration style. Every piece of furniture is correctly scaled to your actual dimensions. Toggle between empty and furnished.',
+              body:'Walk through your room furnished in the inspiration style. Every piece of furniture is correctly scaled to your actual dimensions. Toggle between empty and furnished view.',
               tags:['Three.js · WebGL','FastAPI backend','Real-time render'],
-              accent:false,
             },
           ].map((step,i) => (
             <motion.div key={i}
@@ -456,38 +455,36 @@ export default function LandingPage() {
               viewport={{ once:true, margin:'-60px' }}
               style={{
                 display:'grid',
-                gridTemplateColumns:'160px 1fr 200px',
-                gap:64,
-                padding:'72px 0',
+                gridTemplateColumns:'140px 1fr 180px',
+                gap:64, padding:'72px 0',
                 borderTop:'1px solid var(--border)',
                 alignItems:'start',
               }}
             >
-              {/* Number */}
               <motion.div
-                initial={{ opacity:0, x:-20 }}
-                whileInView={{ opacity:1, x:0 }}
-                transition={{ duration:0.7, delay:0.1 }}
+                initial={{ opacity:0 }}
+                whileInView={{ opacity:1 }}
+                transition={{ duration:0.7 }}
                 viewport={{ once:true }}
                 style={{
                   fontFamily:'var(--display)',
-                  fontSize:'clamp(80px,10vw,120px)',
-                  color: step.accent ? 'var(--accent)' : 'rgba(255,255,255,0.06)',
+                  fontSize:'clamp(72px,9vw,110px)',
+                  color: step.accent
+                    ? 'var(--accent)'
+                    : 'rgba(255,255,255,0.05)',
                   lineHeight:1, letterSpacing:'-0.02em',
-                  transition:'color 0.3s',
                 }}
               >{step.n}</motion.div>
 
-              {/* Content */}
               <div>
                 <motion.h3
-                  initial={{ opacity:0, y:20 }}
+                  initial={{ opacity:0, y:24 }}
                   whileInView={{ opacity:1, y:0 }}
-                  transition={{ duration:0.7, delay:0.15 }}
+                  transition={{ duration:0.7, delay:0.1 }}
                   viewport={{ once:true }}
                   style={{
                     fontFamily:'var(--display)',
-                    fontSize:'clamp(30px,4vw,52px)',
+                    fontSize:'clamp(32px,4vw,56px)',
                     color:'var(--text)', marginBottom:24,
                     lineHeight:1.0, letterSpacing:'-0.01em',
                     whiteSpace:'pre-line',
@@ -496,51 +493,51 @@ export default function LandingPage() {
                 <motion.p
                   initial={{ opacity:0 }}
                   whileInView={{ opacity:1 }}
-                  transition={{ duration:0.7, delay:0.25 }}
+                  transition={{ duration:0.7, delay:0.2 }}
                   viewport={{ once:true }}
                   style={{
                     fontFamily:'var(--body)', fontSize:14,
-                    lineHeight:1.9, color:'rgba(255,255,255,0.45)',
-                    fontWeight:300, maxWidth:480,
+                    lineHeight:1.9, color:'rgba(255,255,255,0.42)',
+                    fontWeight:300, maxWidth:500,
                   }}
                 >{step.body}</motion.p>
               </div>
 
-              {/* Tags */}
               <motion.div
                 initial={{ opacity:0 }}
                 whileInView={{ opacity:1 }}
-                transition={{ duration:0.6, delay:0.3 }}
+                transition={{ duration:0.6, delay:0.25 }}
                 viewport={{ once:true }}
                 style={{ paddingTop:8 }}
               >
                 {step.tags.map((t,j) => (
                   <div key={j} style={{
                     fontFamily:'var(--mono)', fontSize:9,
-                    color: step.accent ? 'rgba(200,255,0,0.5)' : 'rgba(255,255,255,0.2)',
+                    color: step.accent
+                      ? 'rgba(200,255,0,0.45)'
+                      : 'rgba(255,255,255,0.18)',
                     letterSpacing:'0.15em', textTransform:'uppercase',
-                    padding:'6px 0',
+                    padding:'8px 0',
                     borderBottom:'1px solid var(--border)',
-                    marginBottom:8,
+                    marginBottom:4,
                   }}>{t}</div>
                 ))}
               </motion.div>
             </motion.div>
           ))}
-          <div style={{ borderTop:'1px solid var(--border)' }}/>
-        </Section>
+          <div style={{ borderTop:'1px solid var(--border)'}}/>
+        </section>
 
-        {/* ── Tech stack ── */}
+        {/* ── Stack ── */}
         <section style={{
-          padding:'80px 48px',
+          padding:'72px 48px',
           borderBottom:'1px solid var(--border)',
-          display:'grid',
-          gridTemplateColumns:'160px 1fr',
+          display:'grid', gridTemplateColumns:'140px 1fr',
           gap:64, alignItems:'center',
         }}>
           <div style={{
             fontFamily:'var(--mono)', fontSize:10,
-            color:'rgba(255,255,255,0.2)', letterSpacing:'0.2em',
+            color:'rgba(255,255,255,0.18)', letterSpacing:'0.2em',
             textTransform:'uppercase',
           }}>[ Stack ]</div>
           <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
@@ -550,14 +547,17 @@ export default function LandingPage() {
               'Three.js','FastAPI','React 18','Python 3.11',
             ].map(t => (
               <motion.div key={t}
-                whileHover={{ borderColor:'var(--accent)', color:'var(--accent)' }}
+                whileHover={{
+                  borderColor:'rgba(200,255,0,0.5)',
+                  color:'var(--accent)',
+                }}
                 transition={{ duration:0.15 }}
                 style={{
-                  fontFamily:'var(--mono)', fontSize:10,
-                  color:'rgba(255,255,255,0.35)',
+                  fontFamily:'var(--mono)', fontSize:9,
+                  color:'rgba(255,255,255,0.3)',
                   letterSpacing:'0.12em', textTransform:'uppercase',
                   padding:'7px 16px',
-                  border:'1px solid rgba(255,255,255,0.08)',
+                  border:'1px solid rgba(255,255,255,0.07)',
                   cursor:'none',
                 }}
               >{t}</motion.div>
@@ -569,40 +569,38 @@ export default function LandingPage() {
         <section style={{ padding:'160px 48px' }}>
           <RevealText>
             <div style={{
-              display:'grid',
-              gridTemplateColumns:'1fr auto',
-              alignItems:'flex-end', gap:80,
+              display:'flex', alignItems:'flex-end',
+              justifyContent:'space-between', gap:80, flexWrap:'wrap',
             }}>
               <h2 style={{
                 fontFamily:'var(--display)',
-                fontSize:'clamp(56px,9vw,130px)',
-                lineHeight:0.93, color:'var(--text)',
+                fontSize:'clamp(64px,10vw,140px)',
+                lineHeight:0.92, color:'var(--text)',
                 letterSpacing:'-0.01em',
               }}>
                 SEE YOUR<br/>
                 ROOM IN 3D.<br/>
                 <motion.span
-                  animate={{ color:['#c8ff00','#ffffff','#c8ff00'] }}
-                  transition={{ repeat:Infinity, duration:3 }}
+                  animate={{ color:['#c8ff00','rgba(255,255,255,0.9)','#c8ff00'] }}
+                  transition={{ repeat:Infinity, duration:3, ease:'easeInOut' }}
                 >NOW.</motion.span>
               </h2>
 
-              <div style={{ paddingBottom:8 }}>
+              <div style={{ paddingBottom:12 }}>
                 <motion.button
                   onClick={()=>navigate('/upload')}
-                  whileHover={{ scale:1.02 }}
-                  whileTap={{ scale:0.98 }}
+                  whileHover={{ opacity:0.85 }}
                   style={{
                     fontFamily:'var(--mono)', fontSize:11,
                     letterSpacing:'0.2em', textTransform:'uppercase',
                     color:'var(--bg)', background:'var(--accent)',
-                    border:'none', padding:'18px 48px',
-                    cursor:'none', display:'block', marginBottom:16,
+                    border:'none', padding:'18px 52px',
+                    cursor:'none', display:'block', marginBottom:14,
                   }}
                 >Start for free →</motion.button>
                 <div style={{
                   fontFamily:'var(--mono)', fontSize:10,
-                  color:'rgba(255,255,255,0.2)',
+                  color:'rgba(255,255,255,0.18)',
                   letterSpacing:'0.12em', textAlign:'center',
                 }}>No account needed</div>
               </div>
@@ -610,7 +608,7 @@ export default function LandingPage() {
           </RevealText>
         </section>
 
-        {/* ── Footer ── */}
+        {/* Footer */}
         <footer style={{
           padding:'28px 48px',
           borderTop:'1px solid var(--border)',
@@ -619,7 +617,7 @@ export default function LandingPage() {
         }}>
           <div style={{
             fontFamily:'var(--display)', fontSize:18,
-            letterSpacing:'0.08em', color:'var(--text)',
+            letterSpacing:'0.08em',
           }}>INSPIRA</div>
           <div style={{
             fontFamily:'var(--mono)', fontSize:10,
