@@ -1,8 +1,7 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap');
 @import "@fontsource/space-mono/400.css";
 @import "@fontsource/space-mono/700.css";
-
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
 
 :root {
   --bg:       #080809;
@@ -11,7 +10,7 @@
   --text:     #e8e8e2;
   --muted:    #44444f;
   --dim:      #2a2a32;
-  --accent:   #c8ff00;        /* darknode uses a sharp neon accent */
+  --accent:   #c8ff00;
   --mono:     'Space Mono', monospace;
   --display:  'Bebas Neue', sans-serif;
   --body:     'Inter', sans-serif;
@@ -29,7 +28,6 @@ body {
   cursor: none;
 }
 
-/* Custom cursor */
 .cursor {
   position: fixed;
   width: 8px;
@@ -38,24 +36,7 @@ body {
   border-radius: 50%;
   pointer-events: none;
   z-index: 9999;
-  transition: transform 0.1s ease;
   mix-blend-mode: difference;
-}
-
-/* Monospaced utility */
-.mono { font-family: var(--mono); }
-.display { font-family: var(--display); }
-
-/* Thin horizontal rule */
-.rule { border: none; border-top: 1px solid var(--border); }
-
-/* Section tag style [ label ] */
-.tag {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.15em;
-  color: var(--muted);
-  text-transform: uppercase;
 }
 
 ::-webkit-scrollbar { width: 2px; }
