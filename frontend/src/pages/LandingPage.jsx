@@ -2,138 +2,140 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   motion, useSpring, AnimatePresence,
-  useMotionValue, useScroll, useTransform,
+  useMotionValue, useScroll, useTransform, useInView,
 } from 'framer-motion'
-import FluidBackground from '../components/FluidBackground'
-import FeatureCards    from '../components/FeatureCards'
+import FeatureCards from '../components/FeatureCards'
 
+/* ── Cursor — large white ring, always visible ── */
 function Cursor() {
-  const x  = useMotionValue(-20)
-  const y  = useMotionValue(-20)
-  const sx = useSpring(x, { stiffness:500, damping:32 })
-  const sy = useSpring(y, { stiffness:500, damping:32 })
+  const mx = useMotionValue(-80)
+  const my = useMotionValue(-80)
+  const ox = useSpring(mx, { stiffness:60, damping:18 })
+  const oy = useSpring(my, { stiffness:60, damping:18 })
+  const ix = useSpring(mx, { stiffness:500, damping:32 })
+  const iy = useSpring(my, { stiffness:500, damping:32 })
+  const [hovered, setHovered] = useState(false)
+
   useEffect(() => {
-    const m = e => { x.set(e.clientX-6); y.set(e.clientY-6) }
+    const m   = e => { mx.set(e.clientX); my.set(e.clientY) }
+    const ov  = e => { if (e.target.closest('button,a')) setHovered(true)  }
+    const out = e => { if (e.target.closest('button,a')) setHovered(false) }
     window.addEventListener('mousemove', m)
-    return () => window.removeEventListener('mousemove', m)
+    window.addEventListener('mouseover', ov)
+    window.addEventListener('mouseout',  out)
+    return () => {
+      window.removeEventListener('mousemove', m)
+      window.removeEventListener('mouseover', ov)
+      window.removeEventListener('mouseout',  out)
+    }
   }, [])
+
   return (
-    <motion.div style={{
-      position:'fixed', zIndex:9999,
-      width:12, height:12, borderRadius:'50%',
-      border:'1px solid var(--accent)',
-      background:'transparent', pointerEvents:'none',
-      x:sx, y:sy,
-    }}/>
+    <>
+      {/* Outer ring */}
+      <motion.div
+        animate={{ scale: hovered ? 1.8 : 1 }}
+        transition={{ duration:0.3 }}
+        style={{
+          position:'fixed', zIndex:9999,
+          width:40, height:40, borderRadius:'50%',
+          border:'1.5px solid rgba(245,240,232,0.7)',
+          pointerEvents:'none',
+          x:ox, y:oy,
+          translateX:'-50%', translateY:'-50%',
+          mixBlendMode:'difference',
+        }}
+      />
+      {/* Inner dot */}
+      <motion.div style={{
+        position:'fixed', zIndex:9999,
+        width:6, height:6, borderRadius:'50%',
+        background:'rgba(245,240,232,0.9)',
+        pointerEvents:'none',
+        x:ix, y:iy,
+        translateX:'-50%', translateY:'-50%',
+        mixBlendMode:'difference',
+      }}/>
+    </>
   )
 }
 
-function Coords() {
-  const [pos, setPos] = useState({ x:0, y:0 })
-  useEffect(() => {
-    const m = e => setPos({ x:e.clientX, y:e.clientY })
-    window.addEventListener('mousemove', m)
-    return () => window.removeEventListener('mousemove', m)
-  }, [])
-  return (
-    <div style={{
-      position:'fixed', bottom:24, right:32, zIndex:50,
-      fontFamily:'var(--mono)', fontSize:10,
-      color:'var(--dim)', letterSpacing:'0.12em',
-      lineHeight:2, pointerEvents:'none', userSelect:'none',
-    }}>
-      <div>X: {String(pos.x).padStart(4,'0')}</div>
-      <div>Y: {String(pos.y).padStart(4,'0')}</div>
-    </div>
-  )
-}
-
+/* ── Loader ── */
 function Loader({ onDone }) {
   const [pct, setPct] = useState(0)
   useEffect(() => {
-    const start = Date.now(), dur = 2000
+    const start = Date.now(), dur = 2200
     const frame = () => {
       const p = Math.min(Math.round(((Date.now()-start)/dur)*100), 100)
       setPct(p)
       if (p < 100) requestAnimationFrame(frame)
-      else setTimeout(onDone, 300)
+      else setTimeout(onDone, 400)
     }
     requestAnimationFrame(frame)
   }, [onDone])
   return (
-    <motion.div
-      exit={{ opacity:0 }}
-      transition={{ duration:1.0, ease:[0.76,0,0.24,1] }}
+    <motion.div exit={{ opacity:0 }} transition={{ duration:1.2 }}
       style={{
-        position:'fixed', inset:0, background:'#0a0a0e',
+        position:'fixed', inset:0, background:'#f0ebe0',
         display:'flex', flexDirection:'column',
-        alignItems:'center', justifyContent:'center',
-        zIndex:1000, overflow:'hidden',
+        alignItems:'center', justifyContent:'center', zIndex:1000,
       }}
     >
-      <FluidBackground/>
-      <div style={{ position:'relative', zIndex:2, textAlign:'center' }}>
-        <div style={{
-          fontFamily:'var(--display)',
-          fontSize:'clamp(140px,28vw,320px)',
-          lineHeight:1, letterSpacing:'-0.03em',
-          color:'rgba(255,255,255,0.85)',
-        }}>
-          {pct}
-          <span style={{ color:'var(--accent)' }}>%</span>
-        </div>
-        <div style={{
-          fontFamily:'var(--mono)', fontSize:10,
-          color:'rgba(255,255,255,0.2)', marginTop:24,
-          letterSpacing:'0.3em', textTransform:'uppercase',
-        }}>Inspira · Loading</div>
+      <div style={{
+        fontFamily:'var(--serif)',
+        fontSize:'clamp(100px,22vw,240px)',
+        fontWeight:300, lineHeight:1,
+        letterSpacing:'-0.03em', color:'#1a1714',
+      }}>
+        {pct}
+        <span style={{
+          fontSize:'0.35em', verticalAlign:'top',
+          marginTop:'0.25em', display:'inline-block',
+          color:'#b8b2a8',
+        }}>%</span>
       </div>
       <div style={{
-        position:'absolute', bottom:0, left:0, right:0,
-        height:1, background:'rgba(255,255,255,0.06)',
-      }}>
-        <div style={{
-          height:'100%', background:'var(--accent)',
-          width:`${pct}%`, transition:'width 0.04s linear',
-        }}/>
+        fontFamily:'var(--mono)', fontSize:9, color:'#b8b2a8',
+        marginTop:32, letterSpacing:'0.35em', textTransform:'uppercase',
+      }}>Inspira</div>
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:1, background:'rgba(0,0,0,0.08)' }}>
+        <div style={{ height:'100%', background:'#1a1714', width:`${pct}%`, transition:'width 0.04s linear' }}/>
       </div>
     </motion.div>
   )
 }
 
-function MagButton({ children, onClick, variant='filled' }) {
-  const ref = useRef()
-  const x   = useMotionValue(0)
-  const y   = useMotionValue(0)
-  const sx  = useSpring(x, { stiffness:200, damping:14 })
-  const sy  = useSpring(y, { stiffness:200, damping:14 })
-  const onMove = e => {
-    const r = ref.current.getBoundingClientRect()
-    x.set((e.clientX-(r.left+r.width/2))*0.3)
-    y.set((e.clientY-(r.top+r.height/2))*0.3)
-  }
-  const onLeave = () => { x.set(0); y.set(0) }
-  const filled  = variant === 'filled'
+/* ── FadeIn ── */
+function FadeIn({ children, delay=0, y=20, style={} }) {
+  const ref    = useRef()
+  const inView = useInView(ref, { once:true, margin:'-80px' })
   return (
-    <motion.button
-      ref={ref} onClick={onClick}
-      onMouseMove={onMove} onMouseLeave={onLeave}
-      style={{
-        x:sx, y:sy,
-        fontFamily:'var(--display)',
-        fontSize:18, letterSpacing:'0.06em',
-        cursor:'none', borderRadius:'6px',
-        border: filled ? 'none' : '1px solid rgba(255,255,255,0.2)',
-        background: filled ? 'var(--accent)' : 'transparent',
-        color: filled ? '#0a0a0e' : 'rgba(255,255,255,0.5)',
-        padding: filled ? '15px 48px' : '15px 40px',
-      }}
-      whileHover={filled
-        ? { boxShadow:'0 0 60px rgba(200,255,0,0.3)', scale:1.04 }
-        : { borderColor:'rgba(255,255,255,0.5)', color:'rgba(255,255,255,0.9)', scale:1.03 }
-      }
-      whileTap={{ scale:0.96 }}
-    >{children}</motion.button>
+    <motion.div ref={ref}
+      initial={{ opacity:0, y }}
+      animate={inView ? { opacity:1, y:0 } : {}}
+      transition={{ duration:1.2, delay, ease:[0.16,1,0.3,1] }}
+      style={style}
+    >{children}</motion.div>
+  )
+}
+
+/* ── Reveal ── */
+function Reveal({ lines, lineStyle={}, delay=0, style={} }) {
+  const ref    = useRef()
+  const inView = useInView(ref, { once:true, margin:'-80px' })
+  return (
+    <div ref={ref} style={style}>
+      {lines.map((line,i) => (
+        <div key={i} style={{ overflow:'hidden' }}>
+          <motion.div
+            initial={{ y:'108%' }}
+            animate={inView ? { y:0 } : {}}
+            transition={{ duration:1.1, delay:delay+i*0.1, ease:[0.16,1,0.3,1] }}
+            style={lineStyle}
+          >{line}</motion.div>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -141,16 +143,8 @@ export default function LandingPage() {
   const navigate   = useNavigate()
   const [loaded, setLoaded] = useState(false)
   const handleDone = useCallback(() => setLoaded(true), [])
-
   const { scrollY } = useScroll()
-
-  // Hero fades out as you scroll
-  const heroOpacity  = useTransform(scrollY, [0, 500], [1, 0])
-  const heroScale    = useTransform(scrollY, [0, 500], [1, 0.96])
-
-  // Overlay that transitions from transparent → dark bg colour
-  // This creates the "fluid dissolves into dark" effect
-  const overlayOpacity = useTransform(scrollY, [200, 600], [0, 1])
+  const imgY = useTransform(scrollY, [0, 800], [0, 80])
 
   if (!loaded) return (
     <AnimatePresence mode="wait">
@@ -160,253 +154,462 @@ export default function LandingPage() {
 
   return (
     <motion.div
-      initial={{ opacity:0 }}
-      animate={{ opacity:1 }}
+      initial={{ opacity:0 }} animate={{ opacity:1 }}
       transition={{ duration:0.8 }}
-      style={{ background:'var(--bg)' }}
+      style={{ background:'#f0ebe0', color:'#1a1714' }}
     >
       <Cursor/>
-      <Coords/>
 
-      {/* ── HERO ── sticky so content scrolls over it */}
-      <motion.div style={{
-        position:'sticky', top:0, zIndex:1,
-        height:'100vh', overflow:'hidden',
-        opacity: heroOpacity,
-        scale:   heroScale,
-      }}>
-        {/* Fluid background */}
-        <FluidBackground/>
+      {/* ── Navbar ── */}
+      <motion.nav
+        initial={{ opacity:0, y:-10 }}
+        animate={{ opacity:1, y:0 }}
+        transition={{ duration:1, delay:0.4 }}
+        style={{
+          position:'fixed', top:0, left:0, right:0, zIndex:100,
+          display:'flex', alignItems:'center',
+          justifyContent:'space-between',
+          padding:'28px 56px',
+          mixBlendMode:'difference',
+        }}
+      >
+        <div style={{
+          fontFamily:'var(--serif)', fontSize:22,
+          fontWeight:400, letterSpacing:'0.18em',
+          textTransform:'uppercase', color:'white',
+        }}>Inspira</div>
 
-        {/* Dark overlay that fades in as you scroll — the transition effect */}
-        <motion.div style={{
-          position:'absolute', inset:0, zIndex:3,
-          background:'var(--bg)',
-          opacity: overlayOpacity,
-          pointerEvents:'none',
-        }}/>
+        <div style={{
+          display:'flex', gap:52,
+          fontFamily:'var(--mono)', fontSize:11,
+          letterSpacing:'0.18em', textTransform:'uppercase',
+          color:'rgba(255,255,255,0.55)',
+        }}>
+          {['Studio','Process','Research'].map(item => (
+            <motion.a key={item} href="#"
+              style={{ textDecoration:'none', color:'inherit' }}
+              whileHover={{ color:'white' }}
+            >{item}</motion.a>
+          ))}
+        </div>
 
-        {/* Navbar */}
-        <motion.nav
-          initial={{ y:-60, opacity:0 }}
-          animate={{ y:0, opacity:1 }}
-          transition={{ duration:0.9, delay:0.2, ease:[0.16,1,0.3,1] }}
+        <motion.button
+          onClick={() => navigate('/upload')}
           style={{
-            position:'absolute', top:0, left:0, right:0, zIndex:10,
+            fontFamily:'var(--mono)', fontSize:11,
+            letterSpacing:'0.18em', textTransform:'uppercase',
+            color:'white', background:'transparent',
+            border:'1px solid rgba(255,255,255,0.35)',
+            padding:'13px 36px', cursor:'none',
+          }}
+          whileHover={{ borderColor:'white' }}
+        >Begin →</motion.button>
+      </motion.nav>
+
+      {/* ── HERO ── */}
+      <section style={{
+        height:'100vh', position:'relative',
+        overflow:'hidden',
+        background:'#1c1510',
+      }}>
+        {/* ── Background: coffee-beige warm tones ── */}
+        <motion.div style={{ y:imgY, position:'absolute', inset:'-15%', zIndex:0 }}>
+          {/* Base warm coffee tone */}
+          <div style={{
+            position:'absolute', inset:0,
+            background:'radial-gradient(ellipse 100% 100% at 55% 45%, #2e1f12 0%, #1a110a 50%, #0e0908 100%)',
+          }}/>
+          {/* Warm window light — top right */}
+          <div style={{
+            position:'absolute', inset:0,
+            background:'radial-gradient(ellipse 45% 55% at 80% 15%, rgba(240,200,130,0.22) 0%, rgba(200,150,80,0.08) 50%, transparent 75%)',
+          }}/>
+          {/* Warm floor glow */}
+          <div style={{
+            position:'absolute', inset:0,
+            background:'radial-gradient(ellipse 70% 40% at 50% 90%, rgba(180,120,60,0.12) 0%, transparent 60%)',
+          }}/>
+          {/* Cool shadow — left */}
+          <div style={{
+            position:'absolute', inset:0,
+            background:'radial-gradient(ellipse 40% 80% at 5% 50%, rgba(15,10,8,0.4) 0%, transparent 60%)',
+          }}/>
+        </motion.div>
+
+        {/* ── Hero room illustration — richer ── */}
+        <motion.div
+          initial={{ opacity:0 }}
+          animate={{ opacity:1 }}
+          transition={{ duration:2.5, delay:0.6 }}
+          style={{
+            position:'absolute', inset:0, zIndex:2,
             display:'flex', alignItems:'center',
-            justifyContent:'space-between',
-            padding:'24px 56px',
+            justifyContent:'center',
           }}
         >
-          <motion.div
-            style={{
-              fontFamily:'var(--display)', fontSize:22,
-              letterSpacing:'0.06em', color:'rgba(255,255,255,0.9)',
-            }}
-            whileHover={{ color:'var(--accent)' }}
-            transition={{ duration:0.2 }}
-          >INSPIRA.</motion.div>
+          <svg viewBox="0 0 900 650" style={{ width:'80%', maxWidth:900 }}>
+            <defs>
+              <radialGradient id="glow" cx="50%" cy="30%" r="60%">
+                <stop offset="0%"   stopColor="rgba(240,210,150,0.15)"/>
+                <stop offset="100%" stopColor="rgba(240,210,150,0)"/>
+              </radialGradient>
+              <radialGradient id="floorGlow" cx="50%" cy="80%" r="50%">
+                <stop offset="0%"   stopColor="rgba(180,130,80,0.08)"/>
+                <stop offset="100%" stopColor="rgba(180,130,80,0)"/>
+              </radialGradient>
+              <linearGradient id="wallLeft" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%"   stopColor="rgba(245,235,210,0.04)"/>
+                <stop offset="100%" stopColor="rgba(245,235,210,0.09)"/>
+              </linearGradient>
+              <linearGradient id="wallBack" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%"   stopColor="rgba(245,235,210,0.10)"/>
+                <stop offset="100%" stopColor="rgba(245,235,210,0.04)"/>
+              </linearGradient>
+            </defs>
 
-          <div style={{
-            display:'flex', gap:52,
-            fontFamily:'var(--mono)', fontSize:10,
-            letterSpacing:'0.18em', textTransform:'uppercase',
-          }}>
-            {['About','How it works','Research'].map(item => (
-              <motion.a key={item} href="#"
-                style={{ color:'rgba(255,255,255,0.28)', textDecoration:'none' }}
-                whileHover={{ color:'rgba(255,255,255,0.8)' }}
-                transition={{ duration:0.15 }}
-              >{item}</motion.a>
-            ))}
-          </div>
+            {/* Glow fill */}
+            <rect width="900" height="650" fill="url(#glow)"/>
+            <rect width="900" height="650" fill="url(#floorGlow)"/>
 
-          <MagButton onClick={()=>navigate('/upload')}>
-            Try free →
-          </MagButton>
-        </motion.nav>
+            {/* ── Walls — filled panels ── */}
+            {/* Back wall */}
+            <polygon points="220,80 680,80 680,440 220,440" fill="url(#wallBack)"/>
+            {/* Left wall */}
+            <polygon points="40,540 220,440 220,80 40,120" fill="url(#wallLeft)"/>
+            {/* Floor */}
+            <polygon points="40,540 860,540 680,440 220,440" fill="rgba(180,130,70,0.06)"/>
 
-        {/* Hero content */}
+            {/* Wall outlines */}
+            <polygon points="220,80 680,80 680,440 220,440" fill="none" stroke="rgba(245,235,210,0.12)" strokeWidth="0.8"/>
+            <polygon points="40,540 220,440 220,80 40,120" fill="none" stroke="rgba(245,235,210,0.07)" strokeWidth="0.8"/>
+            <polygon points="40,540 860,540 680,440 220,440" fill="none" stroke="rgba(245,235,210,0.07)" strokeWidth="0.8"/>
+            {/* Ceiling */}
+            <polygon points="40,120 860,120 680,80 220,80" fill="rgba(245,235,210,0.03)" stroke="rgba(245,235,210,0.06)" strokeWidth="0.8"/>
+
+            {/* ── Window — filled with light ── */}
+            <g transform="">
+              {/* Window opening */}
+              <rect x="255" y="110" width="170" height="140" fill="rgba(240,210,150,0.18)" stroke="rgba(245,235,210,0.25)" strokeWidth="1"/>
+              {/* Window frame */}
+              <rect x="255" y="110" width="170" height="140" fill="none" stroke="rgba(245,235,210,0.35)" strokeWidth="1.5"/>
+              {/* Cross */}
+              <line x1="340" y1="110" x2="340" y2="250" stroke="rgba(245,235,210,0.3)" strokeWidth="1.2"/>
+              <line x1="255" y1="180" x2="425" y2="180" stroke="rgba(245,235,210,0.3)" strokeWidth="1.2"/>
+              {/* Light rays */}
+              <polygon points="255,110 425,110 580,440 220,440" fill="rgba(240,210,130,0.03)"/>
+            </g>
+
+            {/* ── Artwork on back wall ── */}
+            <rect x="480" y="120" width="110" height="80" fill="rgba(200,170,110,0.08)" stroke="rgba(245,235,210,0.2)" strokeWidth="1"/>
+            <rect x="492" y="130" width="86" height="60" fill="rgba(200,170,110,0.05)" stroke="rgba(245,235,210,0.12)" strokeWidth="0.5"/>
+
+            {/* ── Sofa — filled ── */}
+            <g>
+              {/* Body */}
+              <rect x="290" y="370" width="240" height="55" fill="rgba(160,130,90,0.18)" stroke="rgba(245,235,210,0.18)" strokeWidth="0.8"/>
+              {/* Back */}
+              <rect x="290" y="330" width="240" height="42" fill="rgba(160,130,90,0.22)" stroke="rgba(245,235,210,0.2)" strokeWidth="0.8"/>
+              {/* Arms */}
+              <rect x="284" y="330" width="18" height="95" fill="rgba(140,110,75,0.25)" stroke="rgba(245,235,210,0.18)" strokeWidth="0.8"/>
+              <rect x="518" y="330" width="18" height="95" fill="rgba(140,110,75,0.25)" stroke="rgba(245,235,210,0.18)" strokeWidth="0.8"/>
+              {/* Cushions */}
+              <rect x="297" y="338" width="108" height="30" fill="rgba(180,155,110,0.15)" stroke="rgba(245,235,210,0.12)" strokeWidth="0.5"/>
+              <rect x="415" y="338" width="108" height="30" fill="rgba(180,155,110,0.15)" stroke="rgba(245,235,210,0.12)" strokeWidth="0.5"/>
+              {/* Legs */}
+              <rect x="297" y="423" width="8" height="12" fill="rgba(245,235,210,0.15)"/>
+              <rect x="515" y="423" width="8" height="12" fill="rgba(245,235,210,0.15)"/>
+            </g>
+
+            {/* ── Coffee table ── */}
+            <g>
+              <rect x="340" y="430" width="150" height="8"  fill="rgba(200,170,120,0.2)"  stroke="rgba(245,235,210,0.2)" strokeWidth="0.8"/>
+              <rect x="350" y="438" width="6"   height="20" fill="rgba(200,170,120,0.15)"/>
+              <rect x="474" y="438" width="6"   height="20" fill="rgba(200,170,120,0.15)"/>
+              {/* Book on table */}
+              <rect x="375" y="424" width="50" height="6" fill="rgba(245,235,210,0.12)" stroke="rgba(245,235,210,0.15)" strokeWidth="0.5"/>
+            </g>
+
+            {/* ── Floor lamp — right ── */}
+            <g>
+              <line x1="590" y1="290" x2="590" y2="440" stroke="rgba(245,235,210,0.2)" strokeWidth="1"/>
+              {/* Shade */}
+              <polygon points="562,290 618,290 605,265 575,265" fill="rgba(240,210,140,0.15)" stroke="rgba(245,235,210,0.25)" strokeWidth="0.8"/>
+              {/* Light glow */}
+              <ellipse cx="590" cy="295" rx="35" ry="15" fill="rgba(240,210,130,0.08)"/>
+              {/* Base */}
+              <ellipse cx="590" cy="440" rx="18" ry="5" fill="rgba(245,235,210,0.12)"/>
+            </g>
+
+            {/* ── Side table + plant ── */}
+            <g>
+              <rect x="240" y="385" width="38" height="7"  fill="rgba(200,170,120,0.2)" stroke="rgba(245,235,210,0.15)" strokeWidth="0.8"/>
+              <rect x="244" y="392" width="4"  height="38" fill="rgba(200,170,120,0.12)"/>
+              <rect x="270" y="392" width="4"  height="38" fill="rgba(200,170,120,0.12)"/>
+              {/* Plant pot */}
+              <rect x="250" y="365" width="22" height="22" rx="2" fill="rgba(160,120,80,0.2)" stroke="rgba(245,235,210,0.15)" strokeWidth="0.8"/>
+              {/* Foliage */}
+              <ellipse cx="261" cy="355" rx="18" ry="14" fill="rgba(80,110,70,0.25)" stroke="rgba(100,140,80,0.2)" strokeWidth="0.8"/>
+              <ellipse cx="254" cy="348" rx="12" ry="10" fill="rgba(80,110,70,0.2)"/>
+              <ellipse cx="268" cy="350" rx="10" ry="9"  fill="rgba(90,120,75,0.2)"/>
+            </g>
+
+            {/* ── Rug ── */}
+            <ellipse cx="415" cy="455" rx="160" ry="28" fill="rgba(160,120,80,0.08)" stroke="rgba(245,235,210,0.08)" strokeWidth="0.8"/>
+            <ellipse cx="415" cy="455" rx="138" ry="22" fill="none" stroke="rgba(245,235,210,0.05)" strokeWidth="0.5"/>
+
+            {/* ── Floor reflection of lamp ── */}
+            <ellipse cx="590" cy="445" rx="40" ry="8" fill="rgba(240,210,130,0.04)"/>
+          </svg>
+        </motion.div>
+
+        {/* Bottom gradient */}
         <div style={{
-          position:'absolute', inset:0, zIndex:5,
-          display:'flex', flexDirection:'column',
-          alignItems:'center', justifyContent:'center',
-          textAlign:'center', padding:'0 48px',
-          pointerEvents:'none',
+          position:'absolute', bottom:0, left:0, right:0, zIndex:3,
+          height:'55%',
+          background:'linear-gradient(to top, rgba(14,9,6,0.92) 0%, rgba(14,9,6,0.5) 50%, transparent 100%)',
+        }}/>
+
+        {/* ── Hero text ── */}
+        <div style={{
+          position:'absolute', bottom:0, left:0, right:0, zIndex:5,
+          padding:'0 56px 60px',
+          display:'grid',
+          gridTemplateColumns:'1fr 320px',
+          gap:60, alignItems:'flex-end',
         }}>
+          {/* Left — headline */}
+          <div>
+            <motion.div
+              initial={{ opacity:0 }}
+              animate={{ opacity:1 }}
+              transition={{ duration:1, delay:0.8 }}
+              style={{
+                fontFamily:'var(--mono)', fontSize:10,
+                color:'rgba(245,235,210,0.35)',
+                letterSpacing:'0.28em', textTransform:'uppercase',
+                marginBottom:24,
+              }}
+            >AI Interior Design — 2026</motion.div>
+
+            <div style={{ overflow:'hidden' }}>
+              <motion.div
+                initial={{ y:'108%' }}
+                animate={{ y:0 }}
+                transition={{ duration:1.3, delay:0.85, ease:[0.16,1,0.3,1] }}
+                style={{
+                  fontFamily:'var(--serif)',
+                  fontSize:'clamp(56px,8vw,120px)',
+                  fontWeight:300, lineHeight:0.90,
+                  letterSpacing:'-0.01em',
+                  color:'rgba(245,235,210,0.95)',
+                  fontStyle:'italic',
+                }}
+              >See it in your room,</motion.div>
+            </div>
+            <div style={{ overflow:'hidden' }}>
+              <motion.div
+                initial={{ y:'108%' }}
+                animate={{ y:0 }}
+                transition={{ duration:1.3, delay:0.97, ease:[0.16,1,0.3,1] }}
+                style={{
+                  fontFamily:'var(--serif)',
+                  fontSize:'clamp(56px,8vw,120px)',
+                  fontWeight:300, lineHeight:0.90,
+                  letterSpacing:'-0.01em',
+                  color:'rgba(245,235,210,0.38)',
+                }}
+              >before it's in your room.</motion.div>
+            </div>
+          </div>
+
+          {/* Right — CTA only, no overlapping text */}
           <motion.div
-            initial={{ opacity:0, y:10 }}
-            animate={{ opacity:1, y:0 }}
-            transition={{ duration:0.7, delay:0.4 }}
-            style={{
-              fontFamily:'var(--mono)', fontSize:10,
-              color:'rgba(255,255,255,0.28)',
-              letterSpacing:'0.3em', textTransform:'uppercase',
-              marginBottom:32,
-              display:'flex', alignItems:'center', gap:12,
-            }}
-          >
-            <motion.div
-              animate={{ opacity:[1,0.2,1] }}
-              transition={{ repeat:Infinity, duration:1.8 }}
-              style={{ width:5, height:5, borderRadius:'50%', background:'var(--accent)' }}
-            />
-            AI Interior Design
-            <motion.div
-              animate={{ opacity:[1,0.2,1] }}
-              transition={{ repeat:Infinity, duration:1.8, delay:0.9 }}
-              style={{ width:5, height:5, borderRadius:'50%', background:'var(--accent)' }}
-            />
-          </motion.div>
-
-          <div style={{ overflow:'hidden', marginBottom:12 }}>
-            <motion.div
-              initial={{ y:'110%' }}
-              animate={{ y:0 }}
-              transition={{ duration:1.1, delay:0.5, ease:[0.16,1,0.3,1] }}
-              style={{
-                fontFamily:'var(--display)',
-                fontSize:'clamp(48px,9vw,130px)',
-                lineHeight:0.92, letterSpacing:'-0.01em',
-                color:'rgba(255,255,255,0.92)',
-                whiteSpace:'nowrap',
-              }}
-            >See it in your room,</motion.div>
-          </div>
-
-          <div style={{ overflow:'hidden', marginBottom:48 }}>
-            <motion.div
-              initial={{ y:'110%' }}
-              animate={{ y:0 }}
-              transition={{ duration:1.1, delay:0.62, ease:[0.16,1,0.3,1] }}
-              style={{
-                fontFamily:'var(--display)',
-                fontSize:'clamp(48px,9vw,130px)',
-                lineHeight:0.92, letterSpacing:'-0.01em',
-                color:'var(--accent)',
-                whiteSpace:'nowrap',
-              }}
-            >before it's in your room.</motion.div>
-          </div>
-
-          <motion.p
             initial={{ opacity:0, y:16 }}
             animate={{ opacity:1, y:0 }}
-            transition={{ duration:0.8, delay:0.9 }}
-            style={{
-              fontFamily:'var(--body)', fontSize:15,
-              lineHeight:1.8, color:'rgba(255,255,255,0.3)',
-              fontWeight:300, maxWidth:480, marginBottom:52,
-            }}
+            transition={{ duration:1, delay:1.2 }}
+            style={{ paddingBottom:4 }}
           >
-            Upload any design inspiration.
-            Photograph your room. Inspira reconstructs
-            your space in 3D and shows you exactly how
-            it fits — before you spend a single rupee.
-          </motion.p>
+            <p style={{
+              fontFamily:'var(--sans)', fontSize:14,
+              color:'rgba(245,235,210,0.38)',
+              fontWeight:300, lineHeight:1.85,
+              marginBottom:28,
+              textAlign:'right',
+            }}>
+              Upload any design inspiration.<br/>
+              Photograph your room.<br/>
+              See the result in 3D.
+            </p>
 
-          <motion.div
-            initial={{ opacity:0 }}
-            animate={{ opacity:1 }}
-            transition={{ duration:0.6, delay:1.1 }}
-            style={{ display:'flex', gap:16, alignItems:'center', pointerEvents:'all' }}
-          >
-            <MagButton onClick={()=>navigate('/upload')}>
-              Start for free →
-            </MagButton>
-            <MagButton onClick={()=>navigate('/upload')} variant="outline">
-              Watch demo
-            </MagButton>
+            <motion.button
+              onClick={() => navigate('/upload')}
+              style={{
+                fontFamily:'var(--mono)', fontSize:11,
+                letterSpacing:'0.2em', textTransform:'uppercase',
+                color:'#1a1714',
+                background:'rgba(245,235,210,0.92)',
+                border:'none', padding:'18px 0',
+                cursor:'none', width:'100%',
+              }}
+              whileHover={{ background:'rgba(245,235,210,1)', boxShadow:'0 8px 40px rgba(0,0,0,0.4)' }}
+              whileTap={{ scale:0.97 }}
+            >Begin your project →</motion.button>
+
+            <div style={{
+              fontFamily:'var(--mono)', fontSize:8,
+              color:'rgba(245,235,210,0.18)',
+              letterSpacing:'0.2em', textTransform:'uppercase',
+              marginTop:12, textAlign:'center',
+            }}>Free · No account needed</div>
           </motion.div>
         </div>
 
-        {/* Bottom labels */}
+        {/* Scroll indicator — centered, above text */}
         <motion.div
           initial={{ opacity:0 }}
           animate={{ opacity:1 }}
-          transition={{ duration:0.8, delay:1.2 }}
+          transition={{ duration:1, delay:1.5 }}
           style={{
-            position:'absolute', bottom:40, left:56, zIndex:10,
-            fontFamily:'var(--mono)', fontSize:10,
-            color:'rgba(255,255,255,0.22)',
-            letterSpacing:'0.18em', textTransform:'uppercase',
-            lineHeight:2.4,
-          }}
-        >
-          <div>Interior Design</div>
-          <div>3D Visualization</div>
-          <div>AI-Powered</div>
-        </motion.div>
-
-        {/* Scroll hint — bounces */}
-        <motion.div
-          initial={{ opacity:0 }}
-          animate={{ opacity:1 }}
-          transition={{ duration:0.8, delay:1.3 }}
-          style={{
-            position:'absolute', bottom:40, left:'50%',
-            transform:'translateX(-50%)',
-            zIndex:10,
-            fontFamily:'var(--mono)', fontSize:10,
-            color:'rgba(255,255,255,0.2)',
-            letterSpacing:'0.2em', textTransform:'uppercase',
+            position:'absolute', bottom:68,
+            left:'50%', transform:'translateX(-50%)',
+            zIndex:6,
             display:'flex', flexDirection:'column',
             alignItems:'center', gap:8,
+            fontFamily:'var(--mono)', fontSize:8,
+            color:'rgba(245,235,210,0.2)',
+            letterSpacing:'0.3em', textTransform:'uppercase',
           }}
         >
-          <span>Scroll</span>
           <motion.div
-            animate={{ y:[0,8,0] }}
-            transition={{ repeat:Infinity, duration:2, ease:'easeInOut' }}
-            style={{ width:1, height:32, background:'rgba(255,255,255,0.2)' }}
+            animate={{ scaleY:[0.6,1,0.6] }}
+            transition={{ repeat:Infinity, duration:2.4 }}
+            style={{ width:1, height:32, background:'rgba(245,235,210,0.2)', transformOrigin:'top' }}
           />
+          <span>Scroll</span>
         </motion.div>
+      </section>
 
-        <motion.div
-          initial={{ opacity:0 }}
-          animate={{ opacity:1 }}
-          transition={{ duration:0.8, delay:1.3 }}
-          style={{
-            position:'absolute', bottom:40, right:56, zIndex:10,
-            fontFamily:'var(--mono)', fontSize:10,
-            color:'rgba(255,255,255,0.22)',
-            letterSpacing:'0.2em', textTransform:'uppercase',
-            display:'flex', alignItems:'center', gap:10,
+      {/* ── Intro ── */}
+      <section style={{ padding:'140px 56px', borderBottom:'1px solid rgba(26,23,20,0.1)', background:'#f0ebe0' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'260px 1fr', gap:80, alignItems:'start' }}>
+          <FadeIn>
+            <div style={{
+              fontFamily:'var(--mono)', fontSize:9,
+              color:'#b8b2a8', letterSpacing:'0.2em',
+              textTransform:'uppercase', paddingTop:8,
+            }}>[ Studio ]</div>
+          </FadeIn>
+          <div>
+            <Reveal
+              lines={['The gap between inspiration', 'and reality is over.']}
+              lineStyle={{
+                fontFamily:'var(--serif)',
+                fontSize:'clamp(36px,5vw,72px)',
+                fontWeight:300, fontStyle:'italic',
+                lineHeight:1.1, letterSpacing:'-0.01em',
+                color:'#1a1714',
+              }}
+            />
+            <FadeIn delay={0.3} style={{ marginTop:40 }}>
+              <p style={{
+                fontFamily:'var(--sans)', fontSize:15,
+                lineHeight:1.95, color:'#6b6560',
+                fontWeight:300, maxWidth:580,
+              }}>
+                450 million people save design inspiration every month.
+                Almost none recreate it — not for lack of taste, but because
+                translating a 2D image into a 3D space with real dimensions
+                has been impossible. Inspira changes that.
+              </p>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Stats ── */}
+      <section style={{ padding:'80px 56px', borderBottom:'1px solid rgba(26,23,20,0.1)', background:'#f0ebe0' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)' }}>
+          {[
+            { n:'450M', label:'Design saves monthly' },
+            { n:'< 60s', label:'To read an inspiration' },
+            { n:'94K',   label:'Gaussians per room' },
+            { n:'True',  label:'Geometry, always' },
+          ].map((s,i) => (
+            <FadeIn key={i} delay={i*0.08} style={{
+              padding:'40px 0',
+              borderLeft: i>0 ? '1px solid rgba(26,23,20,0.1)' : 'none',
+              paddingLeft: i>0 ? 48 : 0,
+            }}>
+              <div style={{
+                fontFamily:'var(--serif)',
+                fontSize:'clamp(40px,5vw,64px)',
+                fontWeight:300, letterSpacing:'-0.02em',
+                color:'#1a1714', lineHeight:1, marginBottom:14,
+              }}>{s.n}</div>
+              <div style={{
+                fontFamily:'var(--sans)', fontSize:12,
+                color:'#b8b2a8', fontWeight:300,
+              }}>{s.label}</div>
+            </FadeIn>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Process ── */}
+      <FeatureCards/>
+
+      {/* ── CTA ── */}
+      <section style={{
+        padding:'160px 56px', background:'#1a1714',
+        display:'grid', gridTemplateColumns:'1fr 1fr',
+        gap:100, alignItems:'end',
+      }}>
+        <Reveal
+          lines={['Begin your', 'project today.']}
+          lineStyle={{
+            fontFamily:'var(--serif)',
+            fontSize:'clamp(48px,7vw,100px)',
+            fontWeight:300, fontStyle:'italic',
+            lineHeight:1.0, letterSpacing:'-0.01em',
+            color:'#f0ebe0',
           }}
-        >
-          <motion.span
-            animate={{ y:[0,4,0] }}
-            transition={{ repeat:Infinity, duration:2 }}
-          >↓</motion.span>
-          Scroll to explore
-        </motion.div>
-      </motion.div>
+        />
+        <FadeIn delay={0.2}>
+          <p style={{
+            fontFamily:'var(--sans)', fontSize:15,
+            lineHeight:1.9, color:'rgba(240,235,224,0.38)',
+            fontWeight:300, marginBottom:40,
+          }}>
+            Upload your inspiration and room photos.
+            We reconstruct your space in 3D and show you
+            exactly how your chosen design fits — before
+            you commit to anything.
+          </p>
+          <motion.button
+            onClick={() => navigate('/upload')}
+            style={{
+              fontFamily:'var(--mono)', fontSize:11,
+              letterSpacing:'0.2em', textTransform:'uppercase',
+              color:'#1a1714', background:'#f0ebe0',
+              border:'none', padding:'18px 48px', cursor:'none',
+            }}
+            whileHover={{ background:'white', boxShadow:'0 8px 40px rgba(0,0,0,0.4)' }}
+            whileTap={{ scale:0.97 }}
+          >Start for free →</motion.button>
+        </FadeIn>
+      </section>
 
-      {/* ── CONTENT — sits below sticky hero, scrolls over it ── */}
-      <div style={{ position:'relative', zIndex:2 }}>
-        <FeatureCards/>
-
-        <footer style={{
-          padding:'28px 56px',
-          borderTop:'1px solid var(--border)',
-          display:'flex', justifyContent:'space-between',
-          alignItems:'center', flexWrap:'wrap', gap:16,
-          background:'var(--bg)',
-        }}>
-          <div style={{
-            fontFamily:'var(--display)', fontSize:18,
-            letterSpacing:'0.06em', color:'var(--text)',
-          }}>INSPIRA.</div>
-          <div style={{
-            fontFamily:'var(--mono)', fontSize:10,
-            color:'rgba(255,255,255,0.18)', letterSpacing:'0.15em',
-          }}>© 2026 · COMPUTER VISION RESEARCH</div>
-          <div style={{
-            fontFamily:'var(--mono)', fontSize:10,
-            color:'rgba(255,255,255,0.18)', letterSpacing:'0.12em',
-          }}>3DGS + CLIP + LLAVA</div>
-        </footer>
-      </div>
+      {/* ── Footer ── */}
+      <footer style={{
+        padding:'32px 56px', background:'#1a1714',
+        borderTop:'1px solid rgba(240,235,224,0.07)',
+        display:'flex', justifyContent:'space-between',
+        alignItems:'center', flexWrap:'wrap', gap:16,
+      }}>
+        <div style={{ fontFamily:'var(--serif)', fontSize:17, fontWeight:400, letterSpacing:'0.18em', textTransform:'uppercase', color:'rgba(240,235,224,0.45)' }}>Inspira</div>
+        <div style={{ fontFamily:'var(--mono)', fontSize:9, color:'rgba(240,235,224,0.18)', letterSpacing:'0.15em', textTransform:'uppercase' }}>© 2026 · Computer Vision Research</div>
+        <div style={{ fontFamily:'var(--mono)', fontSize:9, color:'rgba(240,235,224,0.18)', letterSpacing:'0.12em', textTransform:'uppercase' }}>3DGS · CLIP · LLaVA</div>
+      </footer>
     </motion.div>
   )
 }
