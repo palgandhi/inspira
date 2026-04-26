@@ -464,95 +464,193 @@ export default function LandingPage() {
           </motion.div>
         </div>
 
-        {/* Scroll indicator — centered, above text */}
-        <motion.div
-          initial={{ opacity:0 }}
-          animate={{ opacity:1 }}
-          transition={{ duration:1, delay:1.5 }}
-          style={{
-            position:'absolute', bottom:68,
-            left:'50%', transform:'translateX(-50%)',
-            zIndex:6,
-            display:'flex', flexDirection:'column',
-            alignItems:'center', gap:8,
-            fontFamily:'var(--mono)', fontSize:8,
-            color:'rgba(245,235,210,0.2)',
-            letterSpacing:'0.3em', textTransform:'uppercase',
-          }}
-        >
-          <motion.div
-            animate={{ scaleY:[0.6,1,0.6] }}
-            transition={{ repeat:Infinity, duration:2.4 }}
-            style={{ width:1, height:32, background:'rgba(245,235,210,0.2)', transformOrigin:'top' }}
-          />
-          <span>Scroll</span>
-        </motion.div>
+
       </section>
 
       {/* ── Intro ── */}
-      <section style={{ padding:'140px 56px', borderBottom:'1px solid rgba(26,23,20,0.1)', background:'#f0ebe0' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'260px 1fr', gap:80, alignItems:'start' }}>
-          <FadeIn>
-            <div style={{
-              fontFamily:'var(--mono)', fontSize:9,
-              color:'#b8b2a8', letterSpacing:'0.2em',
-              textTransform:'uppercase', paddingTop:8,
-            }}>[ Studio ]</div>
-          </FadeIn>
-          <div>
-            <Reveal
-              lines={['The gap between inspiration', 'and reality is over.']}
-              lineStyle={{
-                fontFamily:'var(--serif)',
-                fontSize:'clamp(36px,5vw,72px)',
-                fontWeight:300, fontStyle:'italic',
-                lineHeight:1.1, letterSpacing:'-0.01em',
-                color:'#1a1714',
-              }}
-            />
-            <FadeIn delay={0.3} style={{ marginTop:40 }}>
+      <section style={{ background:'#f0ebe0', position:'relative', overflow:'hidden' }}>
+
+        {/* ── Big statement + image panel ── */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', minHeight:'70vh' }}>
+
+          {/* Left — headline + body */}
+          <div style={{
+            padding:'100px 64px 80px 56px',
+            display:'flex', flexDirection:'column',
+            justifyContent:'space-between',
+            borderRight:'1px solid rgba(26,23,20,0.1)',
+          }}>
+            <div>
+              <FadeIn>
+                <div style={{
+                  fontFamily:'var(--mono)', fontSize:9,
+                  color:'#b8b2a8', letterSpacing:'0.22em',
+                  textTransform:'uppercase', marginBottom:48,
+                }}>[ About ]</div>
+              </FadeIn>
+
+              <Reveal
+                lines={['The gap between', 'inspiration', 'and reality', 'is over.']}
+                lineStyle={{
+                  fontFamily:'var(--serif)',
+                  fontSize:'clamp(44px,5.5vw,76px)',
+                  fontWeight:500,
+                  lineHeight:1.05,
+                  letterSpacing:'-0.02em',
+                  color:'#1a1714',
+                }}
+                style={{ marginBottom:56 }}
+              />
+            </div>
+
+            <FadeIn delay={0.3}>
               <p style={{
-                fontFamily:'var(--sans)', fontSize:15,
-                lineHeight:1.95, color:'#6b6560',
-                fontWeight:300, maxWidth:580,
+                fontFamily:'var(--sans)', fontSize:16,
+                lineHeight:1.85, color:'#3a3530',
+                fontWeight:400, maxWidth:480,
               }}>
                 450 million people save design inspiration every month.
                 Almost none recreate it — not for lack of taste, but because
-                translating a 2D image into a 3D space with real dimensions
-                has been impossible. Inspira changes that.
+                translating a 2D image into a real 3D space has always been
+                technically impossible.
+                <br/><br/>
+                <strong style={{ fontWeight:600, color:'#1a1714' }}>Inspira makes it possible.</strong>
               </p>
             </FadeIn>
           </div>
+
+          {/* Right — visual panel with warm interior feel */}
+          <FadeIn delay={0.2} style={{ position:'relative', minHeight:500, overflow:'hidden' }}>
+            <div style={{
+              position:'absolute', inset:0,
+              background:`linear-gradient(135deg, #2a1f15 0%, #1a120c 40%, #0f0905 100%)`,
+            }}/>
+            {/* Warm light simulation */}
+            <div style={{
+              position:'absolute', inset:0,
+              background:`radial-gradient(ellipse 60% 60% at 70% 30%, rgba(220,175,100,0.25) 0%, transparent 60%),
+                          radial-gradient(ellipse 40% 50% at 30% 80%, rgba(180,130,70,0.10) 0%, transparent 50%)`,
+            }}/>
+
+            {/* SVG room — same as hero but warmer */}
+            <div style={{
+              position:'absolute', inset:0,
+              display:'flex', alignItems:'center', justifyContent:'center',
+            }}>
+              <svg viewBox="0 0 500 400" style={{ width:'85%', opacity:0.55 }}>
+                <defs>
+                  <linearGradient id="wg2" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="rgba(245,230,200,0.15)"/>
+                    <stop offset="100%" stopColor="rgba(245,230,200,0.05)"/>
+                  </linearGradient>
+                </defs>
+                <polygon points="60,50 440,50 440,290 60,290" fill="url(#wg2)" stroke="rgba(245,230,200,0.2)" strokeWidth="0.8"/>
+                <polygon points="10,360 60,290 60,50 10,90" fill="rgba(245,230,200,0.06)" stroke="rgba(245,230,200,0.12)" strokeWidth="0.8"/>
+                <polygon points="10,360 490,360 440,290 60,290" fill="rgba(200,160,100,0.08)" stroke="rgba(245,230,200,0.1)" strokeWidth="0.8"/>
+                <rect x="100" y="75" width="110" height="100" fill="rgba(220,190,130,0.12)" stroke="rgba(245,230,200,0.25)" strokeWidth="0.8"/>
+                <line x1="155" y1="75" x2="155" y2="175" stroke="rgba(245,230,200,0.2)" strokeWidth="0.8"/>
+                <line x1="100" y1="125" x2="210" y2="125" stroke="rgba(245,230,200,0.2)" strokeWidth="0.8"/>
+                <rect x="175" y="230" width="160" height="45" fill="rgba(160,130,90,0.2)" stroke="rgba(245,230,200,0.2)" strokeWidth="0.8"/>
+                <rect x="175" y="205" width="160" height="28" fill="rgba(160,130,90,0.25)" stroke="rgba(245,230,200,0.2)" strokeWidth="0.8"/>
+                <rect x="170" y="205" width="14" height="70" fill="rgba(140,110,75,0.3)" stroke="rgba(245,230,200,0.15)" strokeWidth="0.8"/>
+                <rect x="331" y="205" width="14" height="70" fill="rgba(140,110,75,0.3)" stroke="rgba(245,230,200,0.15)" strokeWidth="0.8"/>
+                <rect x="245" y="278" width="70" height="6" fill="rgba(200,170,120,0.25)" stroke="rgba(245,230,200,0.2)" strokeWidth="0.8"/>
+                <line x1="390" y1="190" x2="390" y2="295" stroke="rgba(245,230,200,0.2)" strokeWidth="0.8"/>
+                <polygon points="368,190 412,190 400,172 380,172" fill="rgba(240,210,140,0.2)" stroke="rgba(245,230,200,0.25)" strokeWidth="0.8"/>
+                <ellipse cx="390" cy="295" rx="12" ry="4" fill="rgba(245,230,200,0.12)"/>
+                <ellipse cx="255" cy="315" rx="110" ry="20" fill="rgba(160,120,80,0.08)" stroke="rgba(245,230,200,0.06)" strokeWidth="0.5"/>
+              </svg>
+            </div>
+
+            {/* Overlay text */}
+            <div style={{
+              position:'absolute', bottom:40, left:40,
+              fontFamily:'var(--mono)', fontSize:9,
+              color:'rgba(245,230,200,0.35)',
+              letterSpacing:'0.2em', textTransform:'uppercase',
+              lineHeight:2.2,
+            }}>
+              <div>3D Gaussian Splatting</div>
+              <div>CLIP Vision · LLaVA 7B</div>
+              <div>Real-time WebGL Viewer</div>
+            </div>
+          </FadeIn>
+        </div>
+
+        {/* ── How it works teaser — horizontal strip ── */}
+        <div style={{
+          borderTop:'1px solid rgba(26,23,20,0.1)',
+          display:'grid', gridTemplateColumns:'repeat(3,1fr)',
+          background:'#e8e2d5',
+        }}>
+          {[
+            { n:'01', title:'Upload', body:'Drop any Pinterest or Instagram design image. AI reads style, furniture, and palette instantly.' },
+            { n:'02', title:'Photograph', body:'Take 15–20 photos of your room. Our pipeline maps every surface in true 3D geometry.' },
+            { n:'03', title:'Explore', body:'Walk through your room furnished in the inspiration style before spending anything.' },
+          ].map((item, i) => (
+            <FadeIn key={i} delay={i*0.12} style={{
+              padding:'56px 52px',
+              borderLeft: i>0 ? '1px solid rgba(26,23,20,0.1)' : 'none',
+            }}>
+              <div style={{
+                fontFamily:'var(--mono)', fontSize:9,
+                color:'#b8b2a8', letterSpacing:'0.2em',
+                marginBottom:20,
+              }}>{item.n}</div>
+              <div style={{
+                fontFamily:'var(--serif)', fontSize:'clamp(28px,3vw,40px)',
+                fontWeight:500, color:'#1a1714',
+                marginBottom:16, lineHeight:1.1,
+              }}>{item.title}</div>
+              <p style={{
+                fontFamily:'var(--sans)', fontSize:14,
+                lineHeight:1.8, color:'#4a4540',
+                fontWeight:400,
+              }}>{item.body}</p>
+            </FadeIn>
+          ))}
         </div>
       </section>
 
       {/* ── Stats ── */}
-      <section style={{ padding:'80px 56px', borderBottom:'1px solid rgba(26,23,20,0.1)', background:'#f0ebe0' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)' }}>
+      <section style={{ background:'#1a1714', position:'relative', overflow:'hidden' }}>
+        <div style={{
+          position:'absolute', inset:0,
+          background:'radial-gradient(ellipse 60% 80% at 20% 50%, rgba(180,130,70,0.06) 0%, transparent 60%)',
+          pointerEvents:'none',
+        }}/>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', position:'relative', zIndex:1 }}>
           {[
-            { n:'450M', label:'Design saves monthly' },
-            { n:'< 60s', label:'To read an inspiration' },
-            { n:'94K',   label:'Gaussians per room' },
-            { n:'True',  label:'Geometry, always' },
+            { n:'450M', label:'Design saves monthly', sub:'On Pinterest alone' },
+            { n:'< 60s', label:'To read an inspiration', sub:'Full AI analysis' },
+            { n:'94K',   label:'Gaussians per room', sub:'True 3D geometry' },
+            { n:'100%',  label:'Your actual dimensions', sub:'Never estimated' },
           ].map((s,i) => (
-            <FadeIn key={i} delay={i*0.08} style={{
-              padding:'40px 0',
-              borderLeft: i>0 ? '1px solid rgba(26,23,20,0.1)' : 'none',
-              paddingLeft: i>0 ? 48 : 0,
+            <FadeIn key={i} delay={i*0.1} style={{
+              padding:'80px 0 80px',
+              paddingLeft: i===0 ? 56 : 48,
+              paddingRight: 24,
+              borderLeft: i>0 ? '1px solid rgba(245,235,210,0.08)' : 'none',
             }}>
               <div style={{
                 fontFamily:'var(--serif)',
-                fontSize:'clamp(40px,5vw,64px)',
-                fontWeight:300, letterSpacing:'-0.02em',
-                color:'#1a1714', lineHeight:1, marginBottom:14,
+                fontSize:'clamp(48px,6vw,80px)',
+                fontWeight:400, letterSpacing:'-0.03em',
+                color:'#f0ebe0', lineHeight:1, marginBottom:16,
               }}>{s.n}</div>
               <div style={{
-                fontFamily:'var(--sans)', fontSize:12,
-                color:'#b8b2a8', fontWeight:300,
+                fontFamily:'var(--sans)', fontSize:14,
+                color:'rgba(240,235,224,0.7)', fontWeight:500,
+                marginBottom:6,
               }}>{s.label}</div>
+              <div style={{
+                fontFamily:'var(--sans)', fontSize:12,
+                color:'rgba(240,235,224,0.3)', fontWeight:300,
+              }}>{s.sub}</div>
             </FadeIn>
           ))}
         </div>
+        <div style={{ height:1, background:'rgba(245,235,210,0.08)' }}/>
       </section>
 
       {/* ── Process ── */}
@@ -562,23 +660,30 @@ export default function LandingPage() {
       <section style={{
         padding:'160px 56px', background:'#1a1714',
         display:'grid', gridTemplateColumns:'1fr 1fr',
-        gap:100, alignItems:'end',
+        gap:100, alignItems:'end', position:'relative', overflow:'hidden',
       }}>
-        <Reveal
-          lines={['Begin your', 'project today.']}
-          lineStyle={{
-            fontFamily:'var(--serif)',
-            fontSize:'clamp(48px,7vw,100px)',
-            fontWeight:300, fontStyle:'italic',
-            lineHeight:1.0, letterSpacing:'-0.01em',
-            color:'#f0ebe0',
-          }}
-        />
-        <FadeIn delay={0.2}>
+        <div style={{
+          position:'absolute', inset:0, zIndex:0,
+          background:'radial-gradient(ellipse 60% 80% at 20% 80%, rgba(180,130,70,0.08) 0%, transparent 60%)',
+          pointerEvents:'none',
+        }}/>
+        <div style={{ position:'relative', zIndex:1 }}>
+          <Reveal
+            lines={['Begin your', 'project today.']}
+            lineStyle={{
+              fontFamily:'var(--serif)',
+              fontSize:'clamp(48px,7vw,100px)',
+              fontWeight:500, fontStyle:'italic',
+              lineHeight:1.0, letterSpacing:'-0.01em',
+              color:'#f0ebe0',
+            }}
+          />
+        </div>
+        <FadeIn delay={0.2} style={{ position:'relative', zIndex:1 }}>
           <p style={{
-            fontFamily:'var(--sans)', fontSize:15,
-            lineHeight:1.9, color:'rgba(240,235,224,0.38)',
-            fontWeight:300, marginBottom:40,
+            fontFamily:'var(--sans)', fontSize:16,
+            lineHeight:1.9, color:'rgba(240,235,224,0.5)',
+            fontWeight:400, marginBottom:40,
           }}>
             Upload your inspiration and room photos.
             We reconstruct your space in 3D and show you
@@ -606,7 +711,7 @@ export default function LandingPage() {
         display:'flex', justifyContent:'space-between',
         alignItems:'center', flexWrap:'wrap', gap:16,
       }}>
-        <div style={{ fontFamily:'var(--serif)', fontSize:17, fontWeight:400, letterSpacing:'0.18em', textTransform:'uppercase', color:'rgba(240,235,224,0.45)' }}>Inspira</div>
+        <div style={{ fontFamily:'var(--serif)', fontSize:17, fontWeight:500, letterSpacing:'0.18em', textTransform:'uppercase', color:'rgba(240,235,224,0.45)' }}>Inspira</div>
         <div style={{ fontFamily:'var(--mono)', fontSize:9, color:'rgba(240,235,224,0.18)', letterSpacing:'0.15em', textTransform:'uppercase' }}>© 2026 · Computer Vision Research</div>
         <div style={{ fontFamily:'var(--mono)', fontSize:9, color:'rgba(240,235,224,0.18)', letterSpacing:'0.12em', textTransform:'uppercase' }}>3DGS · CLIP · LLaVA</div>
       </footer>
