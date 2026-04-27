@@ -5,6 +5,7 @@ import {
   useMotionValue, useScroll, useTransform, useInView,
 } from 'framer-motion'
 import FeatureCards from '../components/FeatureCards'
+import FloatingObject from '../components/FloatingObject'
 
 /* ── Cursor — large white ring, always visible ── */
 function Cursor() {
@@ -416,7 +417,7 @@ export default function LandingPage() {
                   fontSize:'clamp(56px,8vw,120px)',
                   fontWeight:300, lineHeight:0.90,
                   letterSpacing:'-0.01em',
-                  color:'rgba(245,235,210,0.38)',
+                  color:'rgba(245,235,210,0.82)',
                 }}
               >before it's in your room.</motion.div>
             </div>
@@ -431,7 +432,7 @@ export default function LandingPage() {
           >
             <p style={{
               fontFamily:'var(--sans)', fontSize:14,
-              color:'rgba(245,235,210,0.38)',
+              color:'rgba(245,235,210,0.82)',
               fontWeight:300, lineHeight:1.85,
               marginBottom:28,
               textAlign:'right',
@@ -478,7 +479,7 @@ export default function LandingPage() {
             padding:'100px 64px 80px 56px',
             display:'flex', flexDirection:'column',
             justifyContent:'space-between',
-            borderRight:'1px solid rgba(26,23,20,0.1)',
+            
           }}>
             <div>
               <FadeIn>
@@ -519,61 +520,24 @@ export default function LandingPage() {
             </FadeIn>
           </div>
 
-          {/* Right — visual panel with warm interior feel */}
-          <FadeIn delay={0.2} style={{ position:'relative', minHeight:500, overflow:'hidden' }}>
-            <div style={{
-              position:'absolute', inset:0,
-              background:`linear-gradient(135deg, #2a1f15 0%, #1a120c 40%, #0f0905 100%)`,
-            }}/>
-            {/* Warm light simulation */}
-            <div style={{
-              position:'absolute', inset:0,
-              background:`radial-gradient(ellipse 60% 60% at 70% 30%, rgba(220,175,100,0.25) 0%, transparent 60%),
-                          radial-gradient(ellipse 40% 50% at 30% 80%, rgba(180,130,70,0.10) 0%, transparent 50%)`,
-            }}/>
-
-            {/* SVG room — same as hero but warmer */}
-            <div style={{
-              position:'absolute', inset:0,
-              display:'flex', alignItems:'center', justifyContent:'center',
-            }}>
-              <svg viewBox="0 0 500 400" style={{ width:'85%', opacity:0.55 }}>
-                <defs>
-                  <linearGradient id="wg2" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="rgba(245,230,200,0.15)"/>
-                    <stop offset="100%" stopColor="rgba(245,230,200,0.05)"/>
-                  </linearGradient>
-                </defs>
-                <polygon points="60,50 440,50 440,290 60,290" fill="url(#wg2)" stroke="rgba(245,230,200,0.2)" strokeWidth="0.8"/>
-                <polygon points="10,360 60,290 60,50 10,90" fill="rgba(245,230,200,0.06)" stroke="rgba(245,230,200,0.12)" strokeWidth="0.8"/>
-                <polygon points="10,360 490,360 440,290 60,290" fill="rgba(200,160,100,0.08)" stroke="rgba(245,230,200,0.1)" strokeWidth="0.8"/>
-                <rect x="100" y="75" width="110" height="100" fill="rgba(220,190,130,0.12)" stroke="rgba(245,230,200,0.25)" strokeWidth="0.8"/>
-                <line x1="155" y1="75" x2="155" y2="175" stroke="rgba(245,230,200,0.2)" strokeWidth="0.8"/>
-                <line x1="100" y1="125" x2="210" y2="125" stroke="rgba(245,230,200,0.2)" strokeWidth="0.8"/>
-                <rect x="175" y="230" width="160" height="45" fill="rgba(160,130,90,0.2)" stroke="rgba(245,230,200,0.2)" strokeWidth="0.8"/>
-                <rect x="175" y="205" width="160" height="28" fill="rgba(160,130,90,0.25)" stroke="rgba(245,230,200,0.2)" strokeWidth="0.8"/>
-                <rect x="170" y="205" width="14" height="70" fill="rgba(140,110,75,0.3)" stroke="rgba(245,230,200,0.15)" strokeWidth="0.8"/>
-                <rect x="331" y="205" width="14" height="70" fill="rgba(140,110,75,0.3)" stroke="rgba(245,230,200,0.15)" strokeWidth="0.8"/>
-                <rect x="245" y="278" width="70" height="6" fill="rgba(200,170,120,0.25)" stroke="rgba(245,230,200,0.2)" strokeWidth="0.8"/>
-                <line x1="390" y1="190" x2="390" y2="295" stroke="rgba(245,230,200,0.2)" strokeWidth="0.8"/>
-                <polygon points="368,190 412,190 400,172 380,172" fill="rgba(240,210,140,0.2)" stroke="rgba(245,230,200,0.25)" strokeWidth="0.8"/>
-                <ellipse cx="390" cy="295" rx="12" ry="4" fill="rgba(245,230,200,0.12)"/>
-                <ellipse cx="255" cy="315" rx="110" ry="20" fill="rgba(160,120,80,0.08)" stroke="rgba(245,230,200,0.06)" strokeWidth="0.5"/>
-              </svg>
+          {/* Right — floating 3D object on same cream background */}
+          <FadeIn delay={0.3} style={{
+            position:'relative', minHeight:500,
+            display:'flex', flexDirection:'column',
+            alignItems:'center', justifyContent:'center',
+          }}>
+            {/* 3D canvas */}
+            <div style={{ width:'100%', height:480 }}>
+              <FloatingObject/>
             </div>
 
-            {/* Overlay text */}
+            {/* Subtle label */}
             <div style={{
-              position:'absolute', bottom:40, left:40,
+              position:'absolute', bottom:32,
               fontFamily:'var(--mono)', fontSize:9,
-              color:'rgba(245,230,200,0.35)',
-              letterSpacing:'0.2em', textTransform:'uppercase',
-              lineHeight:2.2,
-            }}>
-              <div>3D Gaussian Splatting</div>
-              <div>CLIP Vision · LLaVA 7B</div>
-              <div>Real-time WebGL Viewer</div>
-            </div>
+              color:'#c8c0b4',
+              letterSpacing:'0.22em', textTransform:'uppercase',
+            }}>Spatial Intelligence</div>
           </FadeIn>
         </div>
 
@@ -613,13 +577,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── Stats ── */}
-      <section style={{ background:'#1a1714', position:'relative', overflow:'hidden' }}>
-        <div style={{
-          position:'absolute', inset:0,
-          background:'radial-gradient(ellipse 60% 80% at 20% 50%, rgba(180,130,70,0.06) 0%, transparent 60%)',
-          pointerEvents:'none',
-        }}/>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', position:'relative', zIndex:1 }}>
+      <section style={{ background:'#e8e3d8', borderTop:'1px solid rgba(26,23,20,0.08)', borderBottom:'1px solid rgba(26,23,20,0.08)' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)' }}>
           {[
             { n:'450M', label:'Design saves monthly', sub:'On Pinterest alone' },
             { n:'< 60s', label:'To read an inspiration', sub:'Full AI analysis' },
@@ -627,30 +586,29 @@ export default function LandingPage() {
             { n:'100%',  label:'Your actual dimensions', sub:'Never estimated' },
           ].map((s,i) => (
             <FadeIn key={i} delay={i*0.1} style={{
-              padding:'80px 0 80px',
+              padding:'72px 0',
               paddingLeft: i===0 ? 56 : 48,
               paddingRight: 24,
-              borderLeft: i>0 ? '1px solid rgba(245,235,210,0.08)' : 'none',
+              borderLeft: i>0 ? '1px solid rgba(26,23,20,0.08)' : 'none',
             }}>
               <div style={{
                 fontFamily:'var(--serif)',
                 fontSize:'clamp(48px,6vw,80px)',
                 fontWeight:400, letterSpacing:'-0.03em',
-                color:'#f0ebe0', lineHeight:1, marginBottom:16,
+                color:'#1a1714', lineHeight:1, marginBottom:16,
               }}>{s.n}</div>
               <div style={{
                 fontFamily:'var(--sans)', fontSize:14,
-                color:'rgba(240,235,224,0.7)', fontWeight:500,
+                color:'#1a1714', fontWeight:600,
                 marginBottom:6,
               }}>{s.label}</div>
               <div style={{
                 fontFamily:'var(--sans)', fontSize:12,
-                color:'rgba(240,235,224,0.3)', fontWeight:300,
+                color:'#8a8480', fontWeight:400,
               }}>{s.sub}</div>
             </FadeIn>
           ))}
         </div>
-        <div style={{ height:1, background:'rgba(245,235,210,0.08)' }}/>
       </section>
 
       {/* ── Process ── */}

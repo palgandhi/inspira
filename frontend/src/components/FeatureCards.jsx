@@ -1,262 +1,241 @@
 import { useRef } from 'react'
-import { motion, useInView, useScroll, useTransform } from 'framer-motion'
+import { motion, useInView } from 'framer-motion'
 
 const STEPS = [
   {
     n:'01',
     title:'Upload Inspiration',
-    body:'Any Pinterest screenshot, Instagram save, or design photograph. Our system reads the image completely — furniture, colour palette, spatial arrangement, interior style. No manual tagging.',
-    detail:'CLIP Vision · LLaVA 7B',
+    body:'Any Pinterest screenshot, Instagram save, or design photograph. AI reads furniture, colour palette, and interior style — completely automatically.',
     tag:'Image Analysis',
+    detail:'CLIP Vision · LLaVA 7B',
   },
   {
     n:'02',
     title:'Photograph Your Room',
-    body:'Take 15–20 overlapping photographs from different positions. Every corner, wall, window, and floor surface. The more overlap, the more accurate the reconstruction.',
-    detail:'COLMAP · Depth Anything V2',
+    body:'Take 15–20 overlapping photos from different angles. Every wall, floor, window, and surface captured for reconstruction.',
     tag:'Room Capture',
+    detail:'COLMAP · Structure from Motion',
   },
   {
     n:'03',
     title:'3D Reconstruction',
-    body:'Our pipeline builds a precise 3D model of your room — 94,000 individual Gaussian splats, each placed with geometric accuracy derived from your photographs.',
-    detail:'3D Gaussian Splatting',
+    body:'94,000 Gaussian splats rebuild your room with precise geometry — real dimensions, real proportions, real depth.',
     tag:'Spatial AI',
+    detail:'3D Gaussian Splatting',
   },
   {
     n:'04',
-    title:'Adaptation',
-    body:'Furniture from your inspiration is matched to your room\'s actual dimensions. Every piece correctly scaled. Every placement validated for clearance and proportion.',
-    detail:'Grounded-SAM · Spatial AI',
+    title:'Furniture Adaptation',
+    body:'Every piece from your inspiration is scaled to your room\'s actual dimensions. Placed, validated, and checked for proportion.',
     tag:'Design Matching',
+    detail:'Grounded-SAM · Spatial AI',
   },
   {
     n:'05',
     title:'Explore in 3D',
-    body:'Walk through your room as it would look, furnished exactly as the inspiration. Toggle between your empty room and the designed version. Share with anyone.',
-    detail:'Three.js · WebGL',
+    body:'Walk through your room furnished exactly as the inspiration. Toggle between empty and designed. Share with anyone.',
     tag:'3D Viewer',
+    detail:'Three.js · WebGL',
   },
 ]
 
 function Step({ step, index }) {
   const ref    = useRef()
-  const inView = useInView(ref, { once:true, margin:'-80px' })
+  const inView = useInView(ref, { once:true, margin:'-60px' })
+  const isOdd  = index % 2 !== 0
 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity:0, y:32 }}
+      initial={{ opacity:0, y:40 }}
       animate={inView ? { opacity:1, y:0 } : {}}
       transition={{ duration:1.0, delay:0.05, ease:[0.16,1,0.3,1] }}
       style={{
         display:'grid',
-        gridTemplateColumns:'72px 1fr 180px',
-        gap:56, padding:'64px 0',
+        gridTemplateColumns:'1fr 1fr',
         borderTop:'1px solid rgba(26,23,20,0.08)',
-        alignItems:'start',
-        position:'relative',
+        minHeight:220,
       }}
     >
-      {/* Animated left border line */}
-      <motion.div
-        initial={{ scaleY:0 }}
-        animate={inView ? { scaleY:1 } : {}}
-        transition={{ duration:0.8, delay:0.1, ease:[0.16,1,0.3,1] }}
-        style={{
-          position:'absolute', left:0, top:0, bottom:0,
-          width:1, background:'rgba(26,23,20,0.15)',
-          transformOrigin:'top',
-        }}
-      />
-
-      {/* Number */}
-      <motion.div
-        initial={{ opacity:0 }}
-        animate={inView ? { opacity:1 } : {}}
-        transition={{ duration:0.8, delay:0.15 }}
-        style={{
-          fontFamily:'var(--mono)', fontSize:10,
-          color:'#b8b2a8', letterSpacing:'0.15em',
-          paddingTop:6, paddingLeft:16,
-        }}
-      >{step.n}</motion.div>
-
-      {/* Content */}
-      <div>
+      {/* Number + tag — alternates sides */}
+      <div style={{
+        padding:'56px 64px 56px 0',
+        borderRight:'1px solid rgba(26,23,20,0.08)',
+        display:'flex', flexDirection:'column',
+        justifyContent:'space-between',
+        order: isOdd ? 2 : 1,
+        paddingLeft: isOdd ? 64 : 0,
+        paddingRight: isOdd ? 0 : 64,
+        borderRight: isOdd ? 'none' : '1px solid rgba(26,23,20,0.08)',
+        borderLeft: isOdd ? '1px solid rgba(26,23,20,0.08)' : 'none',
+      }}>
         <motion.div
-          initial={{ opacity:0, y:12 }}
-          animate={inView ? { opacity:1, y:0 } : {}}
-          transition={{ duration:0.8, delay:0.12, ease:[0.16,1,0.3,1] }}
+          initial={{ opacity:0 }}
+          animate={inView ? { opacity:1 } : {}}
+          transition={{ duration:0.8, delay:0.1 }}
           style={{
             fontFamily:'var(--serif)',
-            fontSize:'clamp(28px,3.5vw,48px)',
-            fontWeight:300, letterSpacing:'-0.01em',
+            fontSize:'clamp(64px,9vw,120px)',
+            fontWeight:300, lineHeight:1,
+            letterSpacing:'-0.03em',
+            color:'rgba(26,23,20,0.10)',
+          }}
+        >{step.n}</motion.div>
+
+        <div>
+          <div style={{
+            fontFamily:'var(--sans)', fontSize:11,
+            fontWeight:600, color:'#1a1714',
+            letterSpacing:'0.04em',
+            textTransform:'uppercase', marginBottom:8,
+          }}>{step.tag}</div>
+          <div style={{
+            fontFamily:'var(--mono)', fontSize:9,
+            color:'#6b6560', letterSpacing:'0.15em',
+            textTransform:'uppercase', lineHeight:2,
+          }}>
+            {step.detail.split('·').map((t,i) => (
+              <div key={i}>{t.trim()}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{
+        padding:'56px 0 56px 64px',
+        display:'flex', flexDirection:'column',
+        justifyContent:'center',
+        order: isOdd ? 1 : 2,
+        paddingLeft: isOdd ? 0 : 64,
+        paddingRight: isOdd ? 64 : 0,
+      }}>
+        <motion.div
+          initial={{ opacity:0, y:16 }}
+          animate={inView ? { opacity:1, y:0 } : {}}
+          transition={{ duration:0.9, delay:0.12, ease:[0.16,1,0.3,1] }}
+          style={{
+            fontFamily:'var(--serif)',
+            fontSize:'clamp(28px,3vw,44px)',
+            fontWeight:500, lineHeight:1.1,
+            letterSpacing:'-0.01em',
             color:'#1a1714', marginBottom:20,
-            lineHeight:1.05,
           }}
         >{step.title}</motion.div>
 
         <motion.p
-          initial={{ opacity:0, y:8 }}
-          animate={inView ? { opacity:1, y:0 } : {}}
-          transition={{ duration:0.9, delay:0.2, ease:[0.16,1,0.3,1] }}
+          initial={{ opacity:0 }}
+          animate={inView ? { opacity:1 } : {}}
+          transition={{ duration:0.9, delay:0.2 }}
           style={{
-            fontFamily:'var(--sans)', fontSize:14,
-            lineHeight:1.9, color:'#6b6560',
-            fontWeight:300, maxWidth:520,
+            fontFamily:'var(--sans)', fontSize:15,
+            lineHeight:1.85, color:'#4a4540',
+            fontWeight:400, maxWidth:460,
           }}
         >{step.body}</motion.p>
       </div>
-
-      {/* Right — tag + tech */}
-      <motion.div
-        initial={{ opacity:0 }}
-        animate={inView ? { opacity:1 } : {}}
-        transition={{ duration:0.8, delay:0.25 }}
-        style={{ paddingTop:6 }}
-      >
-        <div style={{
-          fontFamily:'var(--sans)', fontSize:11,
-          color:'#1a1714', fontWeight:500,
-          marginBottom:12, letterSpacing:'0.02em',
-        }}>{step.tag}</div>
-        <div style={{
-          fontFamily:'var(--mono)', fontSize:9,
-          color:'#b8b2a8', letterSpacing:'0.15em',
-          textTransform:'uppercase', lineHeight:2.2,
-        }}>
-          {step.detail.split('·').map((t,i) => (
-            <div key={i}>{t.trim()}</div>
-          ))}
-        </div>
-      </motion.div>
     </motion.div>
   )
 }
 
 export default function FeatureCards() {
   const ref    = useRef()
-  const inView = useInView(ref, { once:true, margin:'-60px' })
-  const { scrollYProgress } = useScroll({ target:ref, offset:['start end','end start'] })
-  const bgY = useTransform(scrollYProgress, [0,1], ['0%','3%'])
+  const inView = useInView(ref, { once:true, margin:'-80px' })
 
   return (
-    <section
-      ref={ref}
-      style={{
-        padding:'140px 56px',
-        background:'#f0ebe0',
-        borderTop:'1px solid rgba(26,23,20,0.08)',
+    <section style={{
+      background:'#f0ebe0',
+      borderTop:'1px solid rgba(26,23,20,0.08)',
+    }}>
+      {/* Section header */}
+      <div style={{
+        padding:'100px 56px 80px',
+        display:'grid',
+        gridTemplateColumns:'1fr 1fr',
+        gap:80,
         borderBottom:'1px solid rgba(26,23,20,0.08)',
-        position:'relative', overflow:'hidden',
-      }}
-    >
-      {/* Subtle parallax texture */}
-      <motion.div style={{
-        position:'absolute', inset:0, zIndex:0,
-        background:`radial-gradient(ellipse 50% 60% at 90% 10%, rgba(180,150,100,0.05) 0%, transparent 60%),
-                    radial-gradient(ellipse 40% 50% at 10% 90%, rgba(150,120,80,0.04) 0%, transparent 50%)`,
-        y: bgY,
-        pointerEvents:'none',
-      }}/>
+      }}>
+        <div ref={ref}>
+          <motion.div
+            initial={{ opacity:0 }}
+            animate={inView ? { opacity:1 } : {}}
+            transition={{ duration:0.8 }}
+            style={{
+              fontFamily:'var(--mono)', fontSize:9,
+              color:'#b8b2a8', letterSpacing:'0.22em',
+              textTransform:'uppercase', marginBottom:40,
+            }}
+          >[ Process ]</motion.div>
 
-      <div style={{ position:'relative', zIndex:1 }}>
-        {/* Section heading */}
-        <div style={{
-          display:'grid',
-          gridTemplateColumns:'1fr 1fr',
-          gap:80, marginBottom:100,
-        }}>
-          <div>
-            <motion.div
-              initial={{ opacity:0 }}
-              whileInView={{ opacity:1 }}
-              viewport={{ once:true }}
-              transition={{ duration:0.8 }}
-              style={{
-                fontFamily:'var(--mono)', fontSize:9,
-                color:'#b8b2a8', letterSpacing:'0.22em',
-                textTransform:'uppercase', marginBottom:32,
-              }}
-            >[ Process ]</motion.div>
+          {['Five steps.', 'One result.'].map((line,i) => (
+            <div key={i} style={{ overflow:'hidden' }}>
+              <motion.div
+                initial={{ y:'108%' }}
+                animate={inView ? { y:0 } : {}}
+                transition={{ duration:1.0, delay:i*0.12, ease:[0.16,1,0.3,1] }}
+                style={{
+                  fontFamily:'var(--serif)',
+                  fontSize:'clamp(44px,6vw,80px)',
+                  fontWeight: i===0 ? 500 : 300,
+                  fontStyle: i===0 ? 'italic' : 'normal',
+                  lineHeight:1.05,
+                  letterSpacing:'-0.02em',
+                  color: '#1a1714',
+                }}
+              >{line}</motion.div>
+            </div>
+          ))}
+        </div>
 
-            {/* Staggered line reveal */}
-            {['Five steps.', 'One result.'].map((line,i) => (
-              <div key={i} style={{ overflow:'hidden' }}>
-                <motion.div
-                  initial={{ y:'108%' }}
-                  whileInView={{ y:0 }}
-                  viewport={{ once:true }}
-                  transition={{ duration:1.0, delay:i*0.12, ease:[0.16,1,0.3,1] }}
-                  style={{
-                    fontFamily:'var(--serif)',
-                    fontSize:'clamp(44px,6vw,80px)',
-                    fontWeight:300,
-                    fontStyle: i===0 ? 'italic' : 'normal',
-                    lineHeight:1.05,
-                    letterSpacing:'-0.02em',
-                    color: i===0 ? '#1a1714' : '#b8b2a8',
-                  }}
-                >{line}</motion.div>
+        <motion.div
+          initial={{ opacity:0, y:20 }}
+          animate={inView ? { opacity:1, y:0 } : {}}
+          transition={{ duration:1.0, delay:0.25 }}
+          style={{
+            display:'flex', flexDirection:'column',
+            justifyContent:'flex-end',
+          }}
+        >
+          <p style={{
+            fontFamily:'var(--sans)', fontSize:16,
+            lineHeight:1.85, color:'#4a4540',
+            fontWeight:400, marginBottom:48,
+          }}>
+            From a saved image to a fully furnished 3D room.
+            Our pipeline handles every step — upload, scan,
+            reconstruct, adapt, and explore.
+          </p>
+
+          {/* Step indicators */}
+          <div style={{ display:'flex', gap:0 }}>
+            {STEPS.map((s,i) => (
+              <div key={i} style={{
+                flex:1,
+                borderTop:'2px solid rgba(26,23,20,0.12)',
+                paddingTop:12,
+                paddingRight: i<4 ? 16 : 0,
+              }}>
+                <div style={{
+                  fontFamily:'var(--mono)', fontSize:9,
+                  color:'#b8b2a8', letterSpacing:'0.1em',
+                  marginBottom:4,
+                }}>{s.n}</div>
+                <div style={{
+                  fontFamily:'var(--sans)', fontSize:11,
+                  color:'#6b6560', fontWeight:500,
+                }}>{s.title.split(' ')[0]}</div>
               </div>
             ))}
           </div>
+        </motion.div>
+      </div>
 
-          <motion.div
-            initial={{ opacity:0, y:20 }}
-            whileInView={{ opacity:1, y:0 }}
-            viewport={{ once:true }}
-            transition={{ duration:1.0, delay:0.2, ease:[0.16,1,0.3,1] }}
-            style={{ paddingTop:82 }}
-          >
-            <p style={{
-              fontFamily:'var(--sans)', fontSize:15,
-              lineHeight:1.95, color:'#6b6560',
-              fontWeight:300, marginBottom:40,
-            }}>
-              From a saved image to a fully furnished 3D room.
-              Our pipeline handles every step — image analysis,
-              room scanning, 3D reconstruction, furniture adaptation,
-              and interactive exploration.
-            </p>
-
-            {/* Progress bar visual */}
-            <div style={{ display:'flex', gap:4 }}>
-              {STEPS.map((_,i) => (
-                <motion.div
-                  key={i}
-                  initial={{ scaleX:0 }}
-                  whileInView={{ scaleX:1 }}
-                  viewport={{ once:true }}
-                  transition={{ duration:0.6, delay:0.4+i*0.1, ease:[0.16,1,0.3,1] }}
-                  style={{
-                    flex:1, height:2,
-                    background:'rgba(26,23,20,0.15)',
-                    transformOrigin:'left',
-                  }}
-                />
-              ))}
-            </div>
-            <div style={{
-              display:'flex', justifyContent:'space-between',
-              marginTop:8,
-              fontFamily:'var(--mono)', fontSize:8,
-              color:'#b8b2a8', letterSpacing:'0.1em',
-            }}>
-              <span>Upload</span>
-              <span>Explore</span>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Steps */}
-        <div>
-          {STEPS.map((step, i) => (
-            <Step key={i} step={step} index={i}/>
-          ))}
-          <div style={{ borderTop:'1px solid rgba(26,23,20,0.08)' }}/>
-        </div>
+      {/* Steps — alternating layout */}
+      <div style={{ padding:'0 56px' }}>
+        {STEPS.map((step, i) => (
+          <Step key={i} step={step} index={i}/>
+        ))}
+        <div style={{ borderTop:'1px solid rgba(26,23,20,0.08)', height:1 }}/>
       </div>
     </section>
   )
