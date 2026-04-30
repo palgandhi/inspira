@@ -186,11 +186,22 @@ export default function LandingPage() {
           letterSpacing:'0.18em', textTransform:'uppercase',
           color:'rgba(255,255,255,0.55)',
         }}>
-          {['Studio','Process','Research'].map(item => (
-            <motion.a key={item} href="#"
-              style={{ textDecoration:'none', color:'inherit' }}
+          {[
+            { label: 'Studio', path: '#' },
+            { label: 'Process', path: '#' },
+            { label: 'History', path: '/history' }
+          ].map(item => (
+            <motion.a key={item.label} 
+              href={item.path !== '#' ? undefined : '#'}
+              onClick={(e) => {
+                if (item.path !== '#') {
+                  e.preventDefault();
+                  navigate(item.path);
+                }
+              }}
+              style={{ textDecoration:'none', color:'inherit', cursor:'none' }}
               whileHover={{ color:'white' }}
-            >{item}</motion.a>
+            >{item.label}</motion.a>
           ))}
         </div>
 
