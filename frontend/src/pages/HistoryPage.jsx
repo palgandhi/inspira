@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+// eslint-disable-next-line
 import { motion, useMotionValue, useSpring } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { getHistory } from '../services/api';
@@ -26,7 +27,7 @@ function Cursor() {
       window.removeEventListener('mouseover', ov);
       window.removeEventListener('mouseout', out);
     };
-  }, []);
+  }, [mx, my]);;
 
   const cursorContent = (
     <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9999 }}>

@@ -1,3 +1,4 @@
+/* global Buffer */
 import * as THREE from 'three';
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js';
 import fs from 'fs';

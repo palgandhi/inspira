@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+// eslint-disable-next-line
   motion, useSpring, AnimatePresence,
   useMotionValue, useScroll, useTransform, useInView,
 } from 'framer-motion'
@@ -29,7 +30,7 @@ function Cursor() {
       window.removeEventListener('mouseover', ov)
       window.removeEventListener('mouseout',  out)
     }
-  }, [])
+  }, [mx, my]);
 
   return (
     <>

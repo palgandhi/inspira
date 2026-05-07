@@ -76,11 +76,11 @@ function FloatingShapes() {
     { pos:[-0.5, 1.5, -1.0], type:'oct',   size:0.25, speed:0.75,phase:5.0 },
   ], [])
 
-  const refs = useRef(shapes.map(() => React.createRef()))
+  const refs = useMemo(() => shapes.map(() => React.createRef()), [shapes])
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
-    refs.current.forEach((ref, i) => {
+    refs.forEach((ref, i) => {
       if (!ref.current) return
       const s = shapes[i]
       ref.current.position.y = s.pos[1] + Math.sin(t * s.speed + s.phase) * 0.15
@@ -94,7 +94,7 @@ function FloatingShapes() {
       {shapes.map((s, i) => (
         <mesh
           key={i}
-          ref={refs.current[i]}
+          ref={refs[i]}
           position={s.pos}
         >
           {s.type === 'box'
@@ -158,7 +158,7 @@ function GridLines() {
 /* ── Scene wrapper ── */
 function Scene() {
   const groupRef = useRef()
-  useFrame(({ clock, mouse }) => {
+  useFrame(({ mouse }) => {
     if (!groupRef.current) return
     groupRef.current.rotation.y += (mouse.x * 0.08 - groupRef.current.rotation.y) * 0.03
     groupRef.current.rotation.x += (-mouse.y * 0.04 - groupRef.current.rotation.x) * 0.03

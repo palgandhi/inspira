@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -7,25 +7,23 @@ export default function ScanObject() {
   const beamRef   = useRef()
   const cloudRef  = useRef()
 
-  const points = useMemo(() => {
-    const pos = new Float32Array(2000 * 3)
-    const col = new Float32Array(2000 * 3)
+  const [points] = useState(() => {
+    const pos = new Float32Array(2000 * 3);
+    const col = new Float32Array(2000 * 3);
     for (let i = 0; i < 2000; i++) {
-      // Distribute on a sphere surface
-      const theta = Math.random() * Math.PI * 2
-      const phi   = Math.acos(2 * Math.random() - 1)
-      const r     = 0.9 + Math.random() * 0.2
-      pos[i*3]   = r * Math.sin(phi) * Math.cos(theta)
-      pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta)
-      pos[i*3+2] = r * Math.cos(phi)
-      // Colour: mostly accent, some white
-      const bright = Math.random()
-      col[i*3]   = bright > 0.8 ? 1.0 : 0.78
-      col[i*3+1] = bright > 0.8 ? 1.0 : 1.0
-      col[i*3+2] = bright > 0.8 ? 1.0 : 0.0
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      const r = 0.9 + Math.random() * 0.2;
+      pos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+      pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+      pos[i*3+2] = r * Math.cos(phi);
+      const bright = Math.random();
+      col[i*3] = bright > 0.8 ? 1.0 : 0.78;
+      col[i*3+1] = bright > 0.8 ? 1.0 : 1.0;
+      col[i*3+2] = bright > 0.8 ? 1.0 : 0.0;
     }
-    return { pos, col }
-  }, [])
+    return { pos, col };
+  });
 
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry()

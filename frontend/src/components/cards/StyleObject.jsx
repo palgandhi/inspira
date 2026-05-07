@@ -4,7 +4,6 @@ import * as THREE from 'three'
 
 export default function StyleObject() {
   const groupRef = useRef()
-  const lineRefs = useRef([])
 
   // Neural network nodes layout
   const nodes = useMemo(() => [

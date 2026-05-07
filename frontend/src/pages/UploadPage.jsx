@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useRef, Suspense, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+// eslint-disable-next-line
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, MeshDistortMaterial } from '@react-three/drei';
 import * as THREE from 'three';
-import { analyzeInspiration, uploadRoomPhotos } from '../services/api';
+import { analyzeInspiration, uploadRoomPhotos, startReconstruction } from '../services/api';
 
 /* ── Custom Cursor (Matches LandingPage) ── */
 function Cursor() {
@@ -29,7 +30,7 @@ function Cursor() {
       window.removeEventListener('mouseover', ov)
       window.removeEventListener('mouseout',  out)
     }
-  }, [])
+  }, [mx, my]);
 
   const cursorContent = (
     <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9999 }}>
@@ -217,17 +218,23 @@ export default function UploadPage() {
   };
 
   const handleSubmit = async () => {
-    if (!inspiration || roomPhotos.length < 10) return;
+    if (!inspiration || roomPhotos.length < 3) return;
     setIsSubmitting(true);
     setError('');
     try {
-      const [inspirationRes, roomRes] = await Promise.all([
-        analyzeInspiration(inspiration.file),
-        uploadRoomPhotos(roomPhotos.map(p => p.file))
-      ]);
-      const jobId = inspirationRes.job_id || roomRes.job_id;
+      // 1. Upload room photos first to get a definitive job_id
+      const roomRes = await uploadRoomPhotos(roomPhotos.map(p => p.file));
+      const jobId = roomRes.job_id;
+
+      // 2. Analyze inspiration using that same job_id
+      const inspirationRes = await analyzeInspiration(inspiration.file, jobId);
+
+      // 3. Trigger reconstruction pipeline
+      await startReconstruction(jobId, inspirationRes.style);
+      
       navigate('/processing', { state: { job_id: jobId } });
     } catch (err) {
+      console.error(err);
       setError('Submission failed. Please try again.');
       setIsSubmitting(false);
     }
@@ -385,7 +392,7 @@ export default function UploadPage() {
               color: 'rgba(240,235,224,0.5)', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between'
             }}>
               <span style={{ color: '#c4a882' }}>02. Spatial Mapping</span>
-              <span style={{ color: roomPhotos.length >= 10 ? '#c4a882' : 'rgba(240,235,224,0.5)' }}>
+              <span style={{ color: roomPhotos.length >= 3 ? '#c4a882' : 'rgba(240,235,224,0.5)' }}>
                 {roomPhotos.length} / 25 Scans
               </span>
             </div>
@@ -442,7 +449,7 @@ export default function UploadPage() {
                     <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.8rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f5f0e8', marginBottom: '0.5rem' }}>Upload Room Scans</div>
                     <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '0.9rem', color: 'rgba(240,235,224,0.5)', fontWeight: 300, marginBottom: '1rem' }}>Drag & drop or click to browse</p>
                     <div style={{ background: 'rgba(196,168,130,0.1)', border: '1px solid rgba(196,168,130,0.2)', padding: '4px 12px', borderRadius: 20, display: 'inline-block' }}>
-                      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.65rem', color: '#c4a882', letterSpacing: '0.1em', textTransform: 'uppercase' }}>10 photos minimum</span>
+                      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.65rem', color: '#c4a882', letterSpacing: '0.1em', textTransform: 'uppercase' }}>3 photos minimum</span>
                     </div>
                   </motion.div>
                 )}
@@ -453,13 +460,13 @@ export default function UploadPage() {
             <div style={{ marginTop: '1.5rem' }}>
               <div style={{ height: 2, background: 'rgba(255,255,255,0.05)', width: '100%', position: 'relative', overflow: 'hidden' }}>
                 <motion.div
-                  initial={{ width: 0 }} animate={{ width: `${Math.min((roomPhotos.length / 10) * 100, 100)}%` }} transition={{ duration: 0.5 }}
-                  style={{ position: 'absolute', top: 0, left: 0, height: '100%', background: roomPhotos.length >= 10 ? '#c4a882' : 'rgba(196,168,130,0.5)', boxShadow: '0 0 10px rgba(196,168,130,0.8)' }}
+                  initial={{ width: 0 }} animate={{ width: `${Math.min((roomPhotos.length / 3) * 100, 100)}%` }} transition={{ duration: 0.5 }}
+                  style={{ position: 'absolute', top: 0, left: 0, height: '100%', background: roomPhotos.length >= 3 ? '#c4a882' : 'rgba(196,168,130,0.5)', boxShadow: '0 0 10px rgba(196,168,130,0.8)' }}
                 />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.75rem', fontFamily: "'Space Mono', monospace", fontSize: '0.65rem', color: 'rgba(240,235,224,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                 <span>Reconstruction Readiness</span>
-                <span style={{ color: roomPhotos.length >= 10 ? '#c4a882' : 'inherit' }}>{roomPhotos.length >= 10 ? 'Systems Ready' : `${10 - roomPhotos.length} scans required`}</span>
+                <span style={{ color: roomPhotos.length >= 3 ? '#c4a882' : 'inherit' }}>{roomPhotos.length >= 3 ? 'Systems Ready' : `${3 - roomPhotos.length} scans required`}</span>
               </div>
             </div>
           </motion.div>
@@ -481,13 +488,13 @@ export default function UploadPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.6 }}>
           <motion.button
             onClick={handleSubmit}
-            disabled={isSubmitting || !inspiration || roomPhotos.length < 10}
+            disabled={isSubmitting || !inspiration || roomPhotos.length < 3}
             whileHover={{ scale: 1.02, boxShadow: '0 0 40px rgba(196,168,130,0.4)' }}
             whileTap={{ scale: 0.98 }}
             style={{
               fontFamily: "'Space Mono', monospace", fontSize: '0.8rem', letterSpacing: '0.2em', textTransform: 'uppercase',
               color: '#1a1714', background: 'linear-gradient(90deg, #f0ebe0, #d4c5ab)', border: 'none', padding: '1.25rem 4rem',
-              cursor: 'none', opacity: (isSubmitting || !inspiration || roomPhotos.length < 10) ? 0.3 : 1, transition: 'opacity 0.3s ease',
+              cursor: 'none', opacity: (isSubmitting || !inspiration || roomPhotos.length < 3) ? 0.3 : 1, transition: 'opacity 0.3s ease',
             }}
           >
             {isSubmitting ? 'Synthesizing...' : 'Initialize Reconstruction →'}

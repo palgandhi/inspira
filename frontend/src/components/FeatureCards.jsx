@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+// eslint-disable-next-line
 import { motion, useInView } from 'framer-motion'
 
 const STEPS = [
@@ -60,7 +61,6 @@ function Step({ step, index }) {
       {/* Number + tag — alternates sides */}
       <div style={{
         padding:'56px 64px 56px 0',
-        borderRight:'1px solid rgba(26,23,20,0.08)',
         display:'flex', flexDirection:'column',
         justifyContent:'space-between',
         order: isOdd ? 2 : 1,

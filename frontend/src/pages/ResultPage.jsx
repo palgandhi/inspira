@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useRef, Suspense, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+// eslint-disable-next-line
 import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
-import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader';
 import * as THREE from 'three';
 import { getResult } from '../services/api';
 
@@ -30,7 +30,7 @@ function Cursor() {
       window.removeEventListener('mouseover', ov);
       window.removeEventListener('mouseout', out);
     };
-  }, []);
+  }, [mx, my]);;
 
   const cursorContent = (
     <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9999 }}>
@@ -61,123 +61,155 @@ function Cursor() {
   return typeof document !== 'undefined' ? createPortal(cursorContent, document.body) : null;
 }
 
+/* ── Custom Gaussian Splat PLY Parser ── */
+// The PLY file uses Gaussian Splat format with SH coefficients (f_dc_0/1/2)
+// not standard RGB. Three.js PLYLoader doesn't handle this — we parse manually.
+async function loadGaussianSplatPLY(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`);
+  const arrayBuffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+
+  // 1. Parse text header
+  let headerEnd = 0;
+  for (let i = 0; i < bytes.length - 10; i++) {
+    // Look for 'end_header\n'
+    if (bytes[i] === 101 && bytes[i+1] === 110 && bytes[i+2] === 100 &&
+        bytes[i+3] === 95 && bytes[i+4] === 104) {
+      while (i < bytes.length && bytes[i] !== 10) i++;
+      headerEnd = i + 1;
+      break;
+    }
+  }
+
+  const header = new TextDecoder().decode(bytes.slice(0, headerEnd));
+  console.log('[PLY] Header:', header);
+
+  // 2. Parse vertex count and property offsets from header
+  const lines = header.split('\n').map(l => l.trim()).filter(Boolean);
+  let numVertices = 0;
+  const properties = [];
+  for (const line of lines) {
+    if (line.startsWith('element vertex')) numVertices = parseInt(line.split(' ')[2]);
+    if (line.startsWith('property float')) properties.push(line.split(' ')[2]);
+  }
+
+  console.log(`[PLY] ${numVertices} vertices, properties:`, properties);
+
+  const stride = properties.length * 4; // all float32 = 4 bytes each
+  const propIndex = {};
+  properties.forEach((name, i) => { propIndex[name] = i; });
+
+  // 3. Read binary data
+  const dataView = new DataView(arrayBuffer, headerEnd);
+  const positions = new Float32Array(numVertices * 3);
+  const colors    = new Float32Array(numVertices * 3);
+
+  const xi  = propIndex['x'];
+  const yi  = propIndex['y'];
+  const zi  = propIndex['z'];
+  const r0i = propIndex['f_dc_0'];
+  const g0i = propIndex['f_dc_1'];
+  const b0i = propIndex['f_dc_2'];
+
+  // SH to RGB conversion: DC coefficient * SH_C0 + 0.5
+  // SH_C0 = 0.28209479177387814
+  const SH_C0 = 0.28209479177387814;
+
+  for (let i = 0; i < numVertices; i++) {
+    const base = i * stride;
+    const getF = (propIdx) => dataView.getFloat32(base + propIdx * 4, true);
+
+    positions[i*3]   = getF(xi);
+    positions[i*3+1] = getF(yi);
+    positions[i*3+2] = getF(zi);
+
+    // Convert SH DC coefficients to [0,1] RGB
+    const rawR = r0i != null ? getF(r0i) : 0;
+    const rawG = g0i != null ? getF(g0i) : 0;
+    const rawB = b0i != null ? getF(b0i) : 0;
+
+    colors[i*3]   = Math.max(0, Math.min(1, rawR * SH_C0 + 0.5));
+    colors[i*3+1] = Math.max(0, Math.min(1, rawG * SH_C0 + 0.5));
+    colors[i*3+2] = Math.max(0, Math.min(1, rawB * SH_C0 + 0.5));
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('color',    new THREE.BufferAttribute(colors,    3));
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  console.log(`[PLY] Loaded ${numVertices} points. BoundingSphere:`, geometry.boundingSphere);
+  return geometry;
+}
+
 /* ── 3D Point Cloud Component ── */
 function PointCloud({ url, viewMode }) {
   const { camera } = useThree();
-  const geometry = useLoader(PLYLoader, url, (loader) => {
-    if (loader.setPropertyNameMapping) {
-      loader.setPropertyNameMapping({
-        'f_dc_0': 'red',
-        'f_dc_1': 'green',
-        'f_dc_2': 'blue'
-      });
-    }
-  });
   const pointsRef = useRef();
+  const [geoState, setGeoState] = useState({ geo: null, error: null });
+  const geo = geoState.geo;
 
-  // Custom Shader for Volumetric Gaussian Splats
-  const material = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        uColorOffset: { value: viewMode === 'furnished' ? new THREE.Vector3(0.1, 0.0, -0.1) : new THREE.Vector3(0, 0, 0) }
-      },
-      vertexShader: `
-        attribute vec3 color;
-        varying vec3 vColor;
-        uniform vec3 uColorOffset;
-        void main() {
-          vColor = clamp(color + uColorOffset, 0.0, 1.0);
-          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-          // Adjust size relative to distance (size attenuation)
-          gl_PointSize = 150.0 * (1.0 / -mvPosition.z);
-          gl_Position = projectionMatrix * mvPosition;
-        }
-      `,
-      fragmentShader: `
-        varying vec3 vColor;
-        void main() {
-          // Distance from center of the point (0.0 to 0.5)
-          vec2 xy = gl_PointCoord.xy - vec2(0.5);
-          float ll = length(xy);
-          if (ll > 0.5) discard;
-          
-          // Gaussian-like falloff for soft edges
-          float alpha = exp(-ll * ll * 25.0) * 0.9;
-          
-          gl_FragColor = vec4(vColor, alpha);
-        }
-      `,
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.NormalBlending,
-    });
-  }, [viewMode]);
-
-  // Setup Geometry & Camera only once when geometry loads
+  // Load the PLY asynchronously
   useEffect(() => {
-    if (geometry) {
-      const positions = geometry.attributes.position;
-      
-      // 1. Compute bounding box and center geometry
-      const box = new THREE.Box3().setFromBufferAttribute(positions);
-      const center = box.getCenter(new THREE.Vector3());
-      
-      for (let i = 0; i < positions.count; i++) {
-        positions.setXYZ(
-          i,
-          positions.getX(i) - center.x,
-          positions.getY(i) - center.y,
-          positions.getZ(i) - center.z
-        );
-      }
-      geometry.computeBoundingSphere();
-      const radius = geometry.boundingSphere.radius;
+    let cancelled = false;
+    console.log('[PointCloud] Loading:', url);
+    loadGaussianSplatPLY(url)
+      .then(g => {
+        if (cancelled) return;
+        setGeoState({ geo: g, error: null });
+      })
+      .catch(err => {
+        if (cancelled) return;
+        console.error('[PointCloud] Load failed:', err);
+        setGeoState({ geo: null, error: err.message });
+      });
+    return () => { cancelled = true; };
+  }, [url]);
 
-      // 2. Normalize colors based on actual data range
-      if (geometry.attributes.color) {
-        const colors = geometry.attributes.color.array;
-        let min = Infinity;
-        let max = -Infinity;
-        
-        for (let i = 0; i < colors.length; i++) {
-          if (colors[i] < min) min = colors[i];
-          if (colors[i] > max) max = colors[i];
-        }
-        
-        const range = max - min || 1;
-        for (let i = 0; i < colors.length; i++) {
-          colors[i] = (colors[i] - min) / range;
-        }
-        geometry.attributes.color.needsUpdate = true;
-      }
+  // Setup camera when geometry is ready
+  useEffect(() => {
+    if (!geo) return;
+    const sphere = geo.boundingSphere;
+    const r = (sphere && !isNaN(sphere.radius) && sphere.radius > 0) ? sphere.radius : 5;
+    console.log('[PointCloud] Framing camera at radius', r);
+    // Place camera outside the cloud for a good initial view
+    camera.position.set(0, r * 0.5, r * 2);
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+  }, [geo, camera]);
 
-      // 3. Setup Camera for perfect framing
-      camera.position.set(0, radius * 0.2, radius * 1.5);
-      camera.lookAt(0, 0, 0);
-      camera.updateProjectionMatrix();
-    }
-  }, [geometry, camera]);
+  const material = useMemo(() => new THREE.PointsMaterial({
+    size: 0.02,
+    vertexColors: true,
+    sizeAttenuation: true,
+    depthWrite: false,
+  }), []);
+
+  if (geoState.error) {
+    console.error('[PointCloud] Render error:', geoState.error);
+    return null;
+  }
+  if (!geo) return null;
+
+  const center = geo.boundingBox ? geo.boundingBox.getCenter(new THREE.Vector3()) : new THREE.Vector3();
 
   return (
-    <group>
-      <points ref={pointsRef} material={material}>
-        <bufferGeometry attach="geometry" {...geometry} />
-      </points>
-
-      {/* Wireframe Furniture Overlay */}
+    <group position={[-center.x, -center.y, -center.z]}>
+      <points ref={pointsRef} geometry={geo} material={material} />
       {viewMode === 'furnished' && (
         <group>
           <mesh position={[0, -0.2, 0.2]}>
             <boxGeometry args={[0.8, 0.4, 0.6]} />
-            <meshBasicMaterial color="#c4a882" wireframe={true} transparent opacity={0.4} />
+            <meshBasicMaterial color="#c4a882" wireframe transparent opacity={0.4} />
           </mesh>
           <mesh position={[-0.8, -0.1, -0.3]}>
             <boxGeometry args={[0.4, 0.8, 0.4]} />
-            <meshBasicMaterial color="#c4a882" wireframe={true} transparent opacity={0.4} />
+            <meshBasicMaterial color="#c4a882" wireframe transparent opacity={0.4} />
           </mesh>
           <mesh position={[0.8, 0, -0.1]}>
             <boxGeometry args={[0.2, 1.2, 0.2]} />
-            <meshBasicMaterial color="#c4a882" wireframe={true} transparent opacity={0.4} />
+            <meshBasicMaterial color="#c4a882" wireframe transparent opacity={0.4} />
           </mesh>
         </group>
       )}
@@ -245,19 +277,27 @@ const PALETTE_NAMES = ["Slate Blue", "Warm White", "Sand Gold", "Espresso"];
 export default function ResultPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const jobId = location.state?.jobId || 'demo';
-  
+  const jobId = location.state?.job_id || location.state?.jobId;
+
   const [resultData, setResultData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('furnished');
 
   useEffect(() => {
+    if (!jobId) {
+      setError("No job ID provided.");
+      setLoading(false);
+      return;
+    }
+
     async function fetchData() {
       try {
         const data = await getResult(jobId);
         setResultData(data);
       } catch (e) {
         console.error("Failed to load result data", e);
+        setError(e.response?.data?.detail || e.message || "Failed to load result");
       } finally {
         setLoading(false);
       }
@@ -334,18 +374,52 @@ export default function ResultPage() {
 
       {/* ── Main Layout ── */}
       <div style={{ display: 'flex', flex: 1, paddingTop: '100px' }}>
-        
+
         {/* Left Panel: 3D Point Cloud Viewer */}
         <div style={{ flex: 1, position: 'relative', background: '#f0ebe0' }}>
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingView />}>
-              <Canvas>
-                <ambientLight intensity={1} />
-                <PointCloud url="/outputs/reconstructions/my_fixed_model.ply" viewMode={viewMode} />
-                <OrbitControls makeDefault autoRotate={false} enableDamping dampingFactor={0.05} />
-              </Canvas>
-            </Suspense>
-          </ErrorBoundary>
+          {error ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '1rem' }}>
+              <FallbackRoom />
+              <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.5rem', color: '#1a1714' }}>Result unavailable</div>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.7rem', color: 'rgba(26,23,20,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{error}</div>
+              <button onClick={() => navigate('/upload')} style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 16px', border: '1px solid #1a1714', background: 'transparent', cursor: 'none', marginTop: '1rem' }}>New Project</button>
+            </div>
+          ) : !resultData && !loading ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.8rem', color: 'rgba(26,23,20,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>No result data found</div>
+            </div>
+          ) : (
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingView />}>
+                <Canvas
+                  gl={{ antialias: false, powerPreference: "high-performance", alpha: false }}
+                  onCreated={({ gl }) => {
+                    console.log("WebGL Renderer created successfully:", gl.getContextAttributes());
+                    gl.domElement.addEventListener('webglcontextlost', (event) => {
+                      event.preventDefault();
+                      console.error("FATAL: WebGL Context Lost! The GPU has crashed or reset.");
+                    }, false);
+                    gl.domElement.addEventListener('webglcontextrestored', () => {
+                      console.log("WebGL Context Restored. Reloading scene...");
+                      window.location.reload();
+                    }, false);
+                  }}
+                >
+                  <ambientLight intensity={1} />
+                  {resultData && <PointCloud url={resultData.modelUrl || "/outputs/reconstructions/room_final.ply"} viewMode={viewMode} />}
+                  <OrbitControls
+                    makeDefault
+                    autoRotate={false}
+                    enableDamping
+                    dampingFactor={0.05}
+                    enableZoom={true}
+                    enablePan={true}
+                    minDistance={0.1}
+                  />
+                </Canvas>
+              </Suspense>
+            </ErrorBoundary>
+          )}
           
           <div style={{ position: 'absolute', bottom: '2rem', left: '2rem', fontFamily: "'Space Mono', monospace", fontSize: 10, letterSpacing: '0.1em', color: 'rgba(26,23,20,0.5)', textTransform: 'uppercase' }}>
             Interactive Gaussian Splat Viewer (Drag to rotate)

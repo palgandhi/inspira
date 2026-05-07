@@ -4,7 +4,6 @@ import * as THREE from 'three'
 
 export default function UploadObject() {
   const groupRef = useRef()
-  const frameRef = useRef()
   const innerRef = useRef()
 
   useFrame(({ clock }) => {
